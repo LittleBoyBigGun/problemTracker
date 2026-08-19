@@ -1138,9 +1138,9 @@ function renderDpPanel() {
   const today = dateOfTs(Date.now());
 
   let html = '<div class="dp-head">' +
-    '<button class="dp-nav" onclick="dpShiftMonth(-1)">‹</button>' +
+    '<button class="dp-nav" onclick="event.stopPropagation(); dpShiftMonth(-1)">‹</button>' +
     '<span class="dp-title">' + viewYM + '</span>' +
-    '<button class="dp-nav" onclick="dpShiftMonth(1)">›</button>' +
+    '<button class="dp-nav" onclick="event.stopPropagation(); dpShiftMonth(1)">›</button>' +
   '</div>';
   html += '<div class="dp-grid">';
   ['日','一','二','三','四','五','六'].forEach(w => { html += '<div class="dp-week">' + w + '</div>'; });
@@ -1155,12 +1155,12 @@ function renderDpPanel() {
     if (hasRec) cls += ' has-rec';
     if (isSel) cls += ' selected';
     else if (isToday) cls += ' month-sel';
-    html += '<div class="' + cls + '" onclick="dpPickDay(\'' + full + '\')">' + d + '</div>';
+    html += '<div class="' + cls + '" onclick="event.stopPropagation(); dpPickDay(\'' + full + '\')">' + d + '</div>';
   }
   html += '</div>';
   html += '<div class="dp-foot">' +
-    '<button onclick="dpPickAll()">全部日期</button>' +
-    '<button class="month-btn" onclick="dpPickMonth()">整月 ' + viewYM + '</button>' +
+    '<button onclick="event.stopPropagation(); dpPickAll()">全部日期</button>' +
+    '<button class="month-btn" onclick="event.stopPropagation(); dpPickMonth()">整月 ' + viewYM + '</button>' +
   '</div>';
   panel.innerHTML = html;
 }
@@ -2206,7 +2206,7 @@ function exportFaultJSON() {
     exportedAt: new Date().toISOString(),
     records: state.records
   };
-  downloadFile(dateOfTs(Date.now()) + randCode5() + '.json', JSON.stringify(data, null, 2));
+  downloadFile('故障记录-' + dateOfTs(Date.now()) + '-' + randCode5() + '.json', JSON.stringify(data, null, 2));
   toast('已导出 ' + state.records.length + ' 条');
 }
 function importFaultJSON(event) {
@@ -2247,7 +2247,7 @@ function exportAccountJSON() {
     templates: acct.templates,
     bills: acct.bills
   };
-  downloadFile(dateOfTs(Date.now()) + randCode5() + '.json', JSON.stringify(data, null, 2));
+  downloadFile('记账记录-' + dateOfTs(Date.now()) + '-' + randCode5() + '.json', JSON.stringify(data, null, 2));
   toast('已导出 ' + acct.bills.length + ' 条账单');
 }
 function importAccountJSON(event) {
