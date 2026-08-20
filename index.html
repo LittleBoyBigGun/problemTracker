@@ -496,9 +496,18 @@
 
   /* 记账流水弹窗（半屏） */
   .acc-sheet-modal {
-    height: 50vh; max-height: 50vh; display: flex; flex-direction: column;
-    border-radius: 20px 20px 0 0; padding: 0;
+    height: 75vh; max-height: 90vh; display: flex; flex-direction: column;
+    border-radius: 20px 20px 0 0; padding: 0; overflow: hidden;
   }
+  .acc-sheet-grip {
+    flex: none; display: flex; align-items: center; justify-content: center;
+    padding: 10px 0 6px; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none;
+  }
+  .acc-sheet-grip::before {
+    content: ''; width: 42px; height: 5px; border-radius: 999px;
+    background: rgba(255,255,255,0.45);
+  }
+  .acc-sheet-grip:active { cursor: grabbing; }
   .acc-sheet-head {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 16px; border-bottom: 1px solid var(--border); flex: none;
@@ -529,6 +538,16 @@
   }
   .acc-form-row input:focus { outline: none; border-color: var(--primary); }
   .acc-form-btn { width: 100%; padding: 12px; font-size: 15px; }
+  .acc-remark-input {
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 10px 12px; font-size: 14px;
+  }
+  .acc-remark-input:focus { outline: none; border-color: var(--primary); }
+  .b-remark { flex-basis: 100%; font-size: 12px; color: var(--text-dim); margin-top: 4px; word-break: break-all; }
+  .ac-remark-dot {
+    position: absolute; left: 4px; bottom: 4px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--danger);
+  }
   .acc-sheet-list-wrap { flex: 1; overflow-y: auto; padding: 8px 16px 16px; }
   .acc-bill {
     position: relative; overflow: hidden;
@@ -542,7 +561,7 @@
   .acc-bill.pending .b-item { color: var(--danger); }
   .acc-bill-content {
     position: relative; z-index: 1;
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
     padding: 12px 14px; gap: 10px;
     background: var(--card-2);
     transition: transform .2s;
@@ -890,7 +909,8 @@
 
 <!-- 记账流水弹窗（半屏底部，单击日历格弹出） -->
 <div class="modal-mask" id="accSheetModal">
-  <div class="modal acc-sheet-modal">
+  <div class="modal acc-sheet-modal" id="accSheetBox">
+    <div class="acc-sheet-grip" id="accSheetGrip" title="拖动可调整高度"></div>
     <div class="acc-sheet-head">
       <h3 id="accSheetTitle">记账</h3>
       <button class="icon-btn" onclick="closeAccSheet()">✕</button>
@@ -901,6 +921,7 @@
         <input type="text" id="accItem" placeholder="事由">
         <input type="number" id="accAmount" placeholder="金额">
       </div>
+      <input type="text" id="accRemark" class="acc-remark-input" placeholder="备注（选填）">
       <button class="btn primary acc-form-btn" id="accFormBtn" onclick="accFormSubmit()">添加</button>
     </div>
     <div class="acc-sheet-list-wrap">
@@ -1840,6 +1861,7 @@ function renderAccount() {
     const isToday = today === full;
     const total = dayTotal(full);
     const settled = daySettledTotal(full);
+    const hasRemark = acct.bills.some(b => b.date === full && b.remark && b.remark.trim() !== '');
     let cls = 'acc-cell';
     if (isToday) cls += ' today';
     html += '<div class="' + cls + '" data-date="' + full + '" onclick="accCellTap(\'' + full + '\')">';
@@ -1848,6 +1870,8 @@ function renderAccount() {
     html += '<span class="ac-date">' + d + '</span>';
     // 右上角：已入账总和（绿色徽章）
     if (settled > 0) html += '<span class="ac-income">' + settled + '</span>';
+    // 左下角：有备注则显示小红点（无背景）
+    if (hasRemark) html += '<span class="ac-remark-dot"></span>';
     html += '</div>';
   }
   box.innerHTML = html;
@@ -1875,8 +1899,8 @@ function accCellTap(date) {
 }
 
 /* 账单增删 */
-function addBill(date, item, amount) {
-  const bill = { id: acctGenId(), date: date, item: item, amount: Number(amount), settled: false, ts: Date.now() };
+function addBill(date, item, amount, remark) {
+  const bill = { id: acctGenId(), date: date, item: item, amount: Number(amount), settled: false, remark: (remark || '').toString(), ts: Date.now() };
   acct.bills.push(bill);
   acctSave();
 }
@@ -1893,9 +1917,12 @@ function delBill(id) {
 function accOpenDaySheet(date) {
   accSheetDate = date || dateOfTs(Date.now());
   accEditingId = null;
+  const box = document.getElementById('accSheetBox');
+  if (box) box.style.height = '';
   document.getElementById('accSheetTitle').textContent = accSheetDate + ' 记账';
   document.getElementById('accItem').value = '';
   document.getElementById('accAmount').value = '';
+  document.getElementById('accRemark').value = '';
   document.getElementById('accFormBtn').textContent = '添加';
   renderAccTplChips();
   renderAccSheetList();
@@ -1905,6 +1932,36 @@ function closeAccSheet() {
   document.getElementById('accSheetModal').classList.remove('show');
   accEditingId = null;
   renderAccount();
+}
+/* 顶部把手拖动：向上扩展窗口高度，最高 90% 屏高，最低 40% 屏高 */
+let accSheetDrag = null;
+function accSheetGripDown(e) {
+  const box = document.getElementById('accSheetBox');
+  if (!box) return;
+  accSheetDrag = {
+    startY: e.clientY,
+    startH: box.getBoundingClientRect().height,
+    minH: window.innerHeight * 0.4,
+    maxH: window.innerHeight * 0.9
+  };
+  box.style.transition = 'none';
+  try { e.target.setPointerCapture(e.pointerId); } catch(_) {}
+  e.preventDefault();
+}
+function accSheetGripMove(e) {
+  if (!accSheetDrag) return;
+  const box = document.getElementById('accSheetBox');
+  const delta = accSheetDrag.startY - e.clientY; // 向上拖动为正
+  let h = accSheetDrag.startH + delta;
+  h = Math.max(accSheetDrag.minH, Math.min(accSheetDrag.maxH, h));
+  box.style.height = h + 'px';
+}
+function accSheetGripUp(e) {
+  if (!accSheetDrag) return;
+  const box = document.getElementById('accSheetBox');
+  if (box) box.style.transition = '';
+  accSheetDrag = null;
+  try { e.target.releasePointerCapture(e.pointerId); } catch(_) {}
 }
 /* 模板快捷chips：点击把模板数据填入上段输入框，再点“添加”按钮完成记账 */
 function renderAccTplChips() {
@@ -1943,6 +2000,7 @@ function renderAccSheetList() {
       '<div class="acc-bill-content">' +
         '<span class="b-item">' + escapeHtml(b.item) + '</span>' +
         '<span class="b-amount">' + Number(b.amount) + '</span>' +
+        (b.remark ? '<div class="b-remark">📝 ' + escapeHtml(b.remark) + '</div>' : '') +
       '</div>' +
     '</div>';
   }).join('');
@@ -1998,22 +2056,24 @@ function bindBillSwipe(box) {
 function accFormSubmit() {
   const item = document.getElementById('accItem').value.trim();
   const amount = parseFloat(document.getElementById('accAmount').value);
+  const remark = document.getElementById('accRemark').value.trim();
   if (!item) { toast('请填写事由'); return; }
   if (isNaN(amount)) { toast('请填写金额'); return; }
   if (accEditingId) {
     // 修改模式
     const bill = acct.bills.find(b => b.id === accEditingId);
-    if (bill) { bill.item = item; bill.amount = amount; }
+    if (bill) { bill.item = item; bill.amount = amount; bill.remark = remark; }
     accEditingId = null;
     document.getElementById('accFormBtn').textContent = '添加';
     toast('已修改');
   } else {
-    addBill(accSheetDate, item, amount);
+    addBill(accSheetDate, item, amount, remark);
     toast('已添加');
   }
   acctSave();
   document.getElementById('accItem').value = '';
   document.getElementById('accAmount').value = '';
+  document.getElementById('accRemark').value = '';
   renderAccSheetList();
   renderAccount();
 }
@@ -2023,6 +2083,7 @@ function accModifyBill(id) {
   accEditingId = id;
   document.getElementById('accItem').value = bill.item;
   document.getElementById('accAmount').value = bill.amount;
+  document.getElementById('accRemark').value = bill.remark || '';
   document.getElementById('accFormBtn').textContent = '修改';
   // 关闭其他左滑
   document.querySelectorAll('.acc-bill').forEach(el => el.classList.remove('swiped'));
@@ -2267,6 +2328,7 @@ function importAccountJSON(event) {
           if (!b.id) b.id = acctGenId();
           if (!b.date) b.date = b.ts ? dateOfTs(b.ts) : dateOfTs(Date.now());
           if (b.settled === undefined) b.settled = false;
+          if (b.remark === undefined) b.remark = '';
           acct.bills.push(b); added++;
         }
       });
@@ -2286,6 +2348,16 @@ function importAccountJSON(event) {
   };
   reader.readAsText(file);
 }
+
+/* 记账流水弹窗把手拖动 */
+(function bindAccSheetGrip() {
+  const grip = document.getElementById('accSheetGrip');
+  if (!grip) return;
+  grip.addEventListener('pointerdown', accSheetGripDown);
+  grip.addEventListener('pointermove', accSheetGripMove);
+  grip.addEventListener('pointerup', accSheetGripUp);
+  grip.addEventListener('pointercancel', accSheetGripUp);
+})();
 
 /* 记账模块初始化 */
 acctLoad();
