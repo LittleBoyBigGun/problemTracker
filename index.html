@@ -56,39 +56,131 @@
   .icon-btn:active { background: var(--card-2); }
 
   /* 主按钮区 */
+  /* 两个记录按钮平分屏幕宽度 */
   .main {
-    padding: 24px 16px; display: flex; flex-direction: column; gap: 18px;
-    max-width: 560px; margin: 0 auto; width: 100%;
+    padding: 16px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    max-width: 560px; margin: 0 auto; width: 100%; align-items: start;
   }
-  .big-btn {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
-    border: none; color: #fff; border-radius: 18px;
-    padding: 32px 20px; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    box-shadow: 0 6px 24px rgba(79,140,255,0.35);
-    transition: transform .1s, box-shadow .15s;
-    user-select: none;
-    position: relative;
-    overflow: hidden;
+  /* ===== 记录卡片：上(左/中/右) + 中 + 下(左/中/右) ===== */
+  .rec-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 8px 8px 10px;
+    display: flex; flex-direction: column; gap: 8px; min-width: 0;
   }
-  .big-btn:active { transform: scale(0.97); box-shadow: 0 3px 12px rgba(79,140,255,0.3); }
-  .big-btn .label { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
-  .big-btn .btn-mark {
-    position: absolute; top: 12px; right: -26px;
-    width: 84px; padding: 5px 0;
-    background: rgba(255,255,255,0.28);
-    transform: rotate(45deg);
-    font-size: 13px; font-weight: 800; text-align: center;
-    letter-spacing: 1px; line-height: 1.2;
-    pointer-events: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  /* 上区：左(占位) 中(日期) 右(A/B + 上次时长) */
+  .rc-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 4px; }
+  .rc-date {
+    font-size: 11px; color: var(--text-dim); white-space: nowrap;
+    font-variant-numeric: tabular-nums; letter-spacing: 0;
   }
-  .big-btn .sub { font-size: 13px; opacity: 0.85; }
-  .big-btn.b {
-    background: linear-gradient(135deg, #ff7a59 0%, #f0503a 100%);
-    box-shadow: 0 6px 24px rgba(240,80,58,0.35);
+  .rc-right { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+  .rc-total { font-size: 9px; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  /* 中区：上（账户名+提示） + 下（计时 div，默认预留高度） */
+  .rc-mid {
+    width: 100%; cursor: pointer;
+    background: transparent;                 /* 去掉背景颜色 */
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 6px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    color: var(--text); user-select: none; min-width: 0;
+    transition: border-color .15s, transform .1s;
   }
-  .big-btn.b:active { box-shadow: 0 3px 12px rgba(240,80,58,0.3); }
+  .rc-mid:active { transform: scale(0.99); border-color: var(--primary); }
+  .rc-mid.b:active { border-color: #ff7a59; }
+  .rc-mid.running { border-color: var(--danger); animation: recPulse 1.1s ease-in-out infinite; }
+  @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); } 50% { box-shadow: 0 0 0 3px rgba(255,80,80,0.22); } }
+  .rc-mid-top { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .rc-name {
+    font-weight: 700; line-height: 1.2; color: var(--primary);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rc-mid.b .rc-name { color: #ff7a59; }
+  .rc-hint { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+  /* 下部分：计时 div（始终占位，避免跳动） */
+  .rc-timer {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 28px; width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .rc-timer .t-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); visibility: hidden; }
+  .rc-timer.running .t-dot { visibility: visible; animation: recPulse 1.1s ease-in-out infinite; }
+  .rc-timer .t-val { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: var(--text-dim); }
+  .rc-timer.running .t-val { color: var(--text); }
+  /* 下区：提前 / 原因 / 延后 —— 只显示值，无文字说明；整块可点开配置页 */
+  .rc-bottom {
+    display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 5px; align-items: stretch;
+    cursor: pointer; user-select: none;
+    transition: opacity .1s, transform .1s;
+  }
+  .rc-bottom:active { opacity: .65; transform: scale(0.985); }
+  .rc-cell {
+    display: flex; align-items: center; justify-content: center; min-width: 0; text-align: center;
+    background: var(--card-2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 7px 3px;
+  }
+  .rc-val {
+    font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rc-val.dim { color: var(--text-dim); }
+  .rc-reason { color: var(--primary); font-weight: 600; }
+  .rc-mid.b ~ .rc-bottom .rc-reason { color: #ff7a59; }
+
+  /* ===== 底部弹出配置页（半屏高，从下向上） ===== */
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    width: 100%; max-width: 560px; margin: 0 auto;
+    height: 50vh; max-height: 50vh;
+    background: var(--card); border-radius: 18px 18px 0 0;
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0 16px 16px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.45);
+  }
+  .modal-mask.show .sheet { animation: sheetUp .22s ease; }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sheet-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 0 9px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
+  }
+  .sheet-title { font-size: 16px; font-weight: 700; }
+  .sheet-close { cursor: pointer; font-size: 15px; color: var(--text-dim); padding: 2px 6px; }
+  .tpl-hint { font-size: 11px; color: var(--text-dim); line-height: 1.7; margin-bottom: 8px; }
+  .tpl-hint b { color: var(--primary); }
+  .tpl-input {
+    flex: 1; width: 100%; resize: none; min-height: 0;
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); padding: 12px; font-size: 13px; line-height: 1.8;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+  .tpl-input:focus { outline: none; border-color: var(--primary); }
+  .sheet-actions { display: flex; gap: 10px; padding-top: 12px; }
+  .sheet-actions .btn { flex: 1; }
+  .cfg-sheet .options { max-height: 24vh; overflow-y: auto; }
+  .cfg-sheet .field { margin-bottom: 12px; }
+  .cfg-sheet .field label { margin-bottom: 5px; }
+  .cfg-input {
+    width: 100%; background: var(--card-2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); padding: 10px 12px; font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cfg-input:focus { outline: none; border-color: var(--primary); }
+  .cfg-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* 模板配置说明（上拉窗口，内容可滚动） */
+  .help-body {
+    flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.85; color: var(--text);
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+  }
+  .help-body h4 { font-size: 13px; margin: 12px 0 4px; color: var(--primary); }
+  .help-body h4:first-child { margin-top: 0; }
+  .help-body code {
+    background: rgba(79,140,255,0.12); color: var(--primary);
+    padding: 1px 5px; border-radius: 5px; font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+  .help-body .mono {
+    display: block; white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px; line-height: 1.7; background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin: 6px 0 2px;
+  }
 
   /* 记录区 */
   .records-wrap { max-width: 560px; margin: 0 auto; width: 100%; padding: 0 16px 24px; }
@@ -106,15 +198,29 @@
   .tab.active { background: var(--card-2); color: var(--text); border-color: var(--primary); }
 
   .record-list { display: flex; flex-direction: column; gap: 8px; }
+  /* 模板里「只含 #日期」的标题行：每个日期只在顶部出现一次 */
+  .record-list .day-head {
+    font-size: 12px; color: var(--text-dim); font-weight: 700;
+    padding: 5px 10px; background: var(--card-2); border-radius: 8px;
+    margin-top: 4px; letter-spacing: 0.3px;
+  }
+  .record-list .day-head:first-child { margin-top: 0; }
   .record-item {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 12px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
     animation: fadeIn .25s ease;
   }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-  .record-item .text { flex: 1; font-size: 14px; word-break: break-all; line-height: 1.6; }
+  .record-item .text {
+    flex: 1; min-width: 0; font-size: 13px; line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   .record-item .time-edit {
     color: var(--primary); cursor: pointer; border-bottom: 1px dashed var(--primary);
+    padding: 0 1px;
+  }
+  .record-item .reason-edit {
+    color: var(--ok); cursor: pointer; border-bottom: 1px dashed var(--ok);
     padding: 0 1px;
   }
   .record-item .tag {
@@ -484,15 +590,57 @@
   }
   .tpl-item-actions .tpl-del { background: var(--danger); color: #fff; }
 
-  /* 统计页 */
-  .stats-wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 96px; }
-  .stats-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 20px; margin-bottom: 12px; text-align: center;
+  /* ===== 统计页（报表风格，浅色） ===== */
+  #page-stats .scroll { background: #eef1f5; }
+  .rpt { max-width: 560px; margin: 0 auto; padding: 16px 16px 110px; }
+  .rpt-hero {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #009a68, #00c389);
+    border-radius: 20px; padding: 24px 20px; color: #fff;
+    box-shadow: 0 8px 24px rgba(0,168,112,0.25);
   }
-  .stats-card .s-label { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
-  .stats-card .s-value { font-size: 28px; font-weight: 700; color: var(--ok); }
-  .stats-card .s-range { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .rpt-hero::before, .rpt-hero::after {
+    content: ''; position: absolute; border-radius: 50%; background: rgba(255,255,255,0.10);
+  }
+  .rpt-hero::before { width: 220px; height: 220px; right: -70px; top: -90px; }
+  .rpt-hero::after { width: 150px; height: 150px; right: 60px; bottom: -80px; }
+  .rpt-hero h2 { font-size: 26px; font-weight: 800; letter-spacing: 1px; position: relative; z-index: 1; }
+  .rpt-sub { font-size: 14px; opacity: .92; margin-top: 6px; position: relative; z-index: 1; }
+  .rpt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; position: relative; z-index: 1; }
+  .rpt-chip { background: rgba(255,255,255,0.22); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; }
+  .rpt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .rpt-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(16,24,40,0.06); min-width: 0; }
+  .rpt-card .k { font-size: 13px; color: #7a8190; }
+  .rpt-card .v { font-size: 24px; font-weight: 800; color: #1f2d24; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .rpt-card .v.green { color: #00a870; }
+  .rpt-card .v.orange { color: #f59e0b; }
+  .rpt-card .s { font-size: 12px; color: #8b93a1; margin-top: 6px; line-height: 1.55; }
+  .rpt-alert {
+    background: #fffbeb; border: 1px solid #fde68a; color: #92600a;
+    border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.7;
+    margin-top: 14px; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .rpt-alert .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; margin-top: 8px; }
+  .rpt-sec { background: #fff; border-radius: 16px; padding: 16px; margin-top: 14px; box-shadow: 0 1px 4px rgba(16,24,40,0.06); }
+  .rpt-sec h3 { font-size: 16px; font-weight: 800; color: #1f2d24; }
+  .rpt-sec h3 .tag { font-size: 12px; color: #8b93a1; font-weight: 500; margin-left: 8px; }
+  .rpt-bars { display: flex; align-items: stretch; gap: 5px; margin-top: 18px; }
+  .rpt-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+  .rpt-bar .amt { font-size: 9px; color: #5b6472; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .rpt-bar .bar { width: 68%; max-width: 26px; border-radius: 5px 5px 2px 2px;
+    background: linear-gradient(180deg, #33c99a, #00a870); min-height: 3px; }
+  .rpt-bar.hot .bar { background: linear-gradient(180deg, #ffc25e, #f59e0b); }
+  .rpt-bar.hot .m { color: #d97706; font-weight: 700; }
+  .rpt-bar .m { font-size: 9.5px; color: #5b6472; margin-top: 2px; }
+  .rpt-bar .c { font-size: 9px; color: #9aa1ad; }
+  .rpt-row { margin-top: 14px; }
+  .rpt-row .line1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; color: #2a3830; min-width: 0; }
+  .rpt-row .line1 .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .rpt-row .line1 i { font-style: normal; font-size: 11px; color: #9aa1ad; }
+  .rpt-row .amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rpt-row .track { height: 8px; background: #eef1f5; border-radius: 4px; margin-top: 6px; overflow: hidden; }
+  .rpt-row .fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #33c99a, #00a870); }
+  .rpt-foot { text-align: center; font-size: 11.5px; color: #9aa1ad; margin-top: 18px; }
 
   /* 记账流水弹窗（半屏） */
   .acc-sheet-modal {
@@ -597,33 +745,71 @@
   </div>
   <div class="scroll" id="homeScroll">
     <div class="main">
-      <button class="big-btn" id="btnA" onclick="openRecordModal('A')">
-        <span class="btn-mark">A</span>
-        <span class="label" id="btnA-label">按钮 A</span>
-        <span class="sub">点击记录故障</span>
-      </button>
-      <button class="big-btn b" id="btnB" onclick="openRecordModal('B')">
-        <span class="btn-mark">B</span>
-        <span class="label" id="btnB-label">按钮 B</span>
-        <span class="sub">点击记录故障</span>
-      </button>
+      <!-- A 卡片：上(左/中/右) + 中 + 下(左/中/右) -->
+      <div class="rec-card">
+        <div class="rc-top">
+          <div class="rc-left"></div>
+          <div class="rc-date" id="rcDateA">—</div>
+          <div class="rc-right">
+            <span class="rc-total" id="rcTotalA">今日 0:00</span>
+          </div>
+        </div>
+        <button class="rc-mid" id="btnA" onclick="toggleRecord('A')">
+          <span class="rc-mid-top">
+            <span class="rc-name" id="btnA-name">按钮 A</span>
+            <span class="rc-hint" id="btnA-sub">点击开始记录</span>
+          </span>
+          <span class="rc-timer" id="timerA">
+            <span class="t-dot" id="timerA-dot"></span><span class="t-val" id="timerA-val">00:00</span>
+          </span>
+        </button>
+        <div class="rc-bottom" onclick="openBottomCfg('A')">
+          <div class="rc-cell"><span class="rc-val dim" id="rcAdvanceA">30秒</span></div>
+          <div class="rc-cell"><span class="rc-val rc-reason" id="btnA-reason">卡了</span></div>
+          <div class="rc-cell"><span class="rc-val dim" id="rcDelayA">30秒</span></div>
+        </div>
+      </div>
+
+      <!-- B 卡片 -->
+      <div class="rec-card">
+        <div class="rc-top">
+          <div class="rc-left"></div>
+          <div class="rc-date" id="rcDateB">—</div>
+          <div class="rc-right">
+            <span class="rc-total" id="rcTotalB">今日 0:00</span>
+          </div>
+        </div>
+        <button class="rc-mid b" id="btnB" onclick="toggleRecord('B')">
+          <span class="rc-mid-top">
+            <span class="rc-name" id="btnB-name">按钮 B</span>
+            <span class="rc-hint" id="btnB-sub">点击开始记录</span>
+          </span>
+          <span class="rc-timer" id="timerB">
+            <span class="t-dot" id="timerB-dot"></span><span class="t-val" id="timerB-val">00:00</span>
+          </span>
+        </button>
+        <div class="rc-bottom" onclick="openBottomCfg('B')">
+          <div class="rc-cell"><span class="rc-val dim" id="rcAdvanceB">30秒</span></div>
+          <div class="rc-cell"><span class="rc-val rc-reason" id="btnB-reason">卡了</span></div>
+          <div class="rc-cell"><span class="rc-val dim" id="rcDelayB">30秒</span></div>
+        </div>
+      </div>
     </div>
 
     <div class="records-wrap">
       <h2>历史记录 <span class="count" id="recCount">0</span></h2>
       <div class="tabs">
         <div class="tab active" data-filter="ALL" onclick="switchTab('ALL')">全部</div>
-        <div class="tab" data-filter="A" onclick="switchTab('A')">A 记录</div>
-        <div class="tab" data-filter="B" onclick="switchTab('B')">B 记录</div>
+        <div class="tab" id="tabA" data-filter="A" onclick="switchTab('A')">A 记录</div>
+        <div class="tab" id="tabB" data-filter="B" onclick="switchTab('B')">B 记录</div>
       </div>
       <div class="record-list" id="recordList"></div>
     </div>
   </div>
   <div class="bottom-bar">
     <div class="bottom-actions">
-      <button class="btn" onclick="copyByButton('A')">📋 复制 A</button>
-      <button class="btn" onclick="copyByButton('B')">📋 复制 B</button>
-      <button class="btn danger" onclick="clearAllClick()">🗑 清空</button>
+      <button class="btn" id="copyBtnA" onclick="copyByButton('A')">📋 复制 A</button>
+      <button class="btn" id="copyBtnB" onclick="copyByButton('B')">📋 复制 B</button>
     </div>
   </div>
 </div>
@@ -651,6 +837,43 @@
             <div class="desc">记录前缀，例如「布拉格のBBB」</div>
           </div>
           <input type="text" id="setNameB" placeholder="输入名字">
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">账号字号</div>
+            <div class="desc">主页中间账户名称的字号（如「布拉格のAAA」），保证一行显示完整</div>
+          </div>
+          <input type="number" id="setFontSize" min="12" max="40" placeholder="20">
+        </div>
+      </div>
+      <div class="group">
+        <div class="row">
+          <div>
+            <div class="name">账号前缀</div>
+            <div class="desc">用于自动生成 #账号简称（去掉该前缀后的部分）</div>
+          </div>
+          <input type="text" id="setNamePrefix" placeholder="布拉格の">
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">A 账号模板</div>
+            <div class="desc" id="setTplDescA">［记录项］［复制项］［设置项］控制显示与复制内容</div>
+          </div>
+          <button class="btn" style="flex:none; padding:8px 14px;" onclick="openTplModal('A')">配置</button>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">B 账号模板</div>
+            <div class="desc" id="setTplDescB">两个账号的模板相互独立，互不影响</div>
+          </div>
+          <button class="btn" style="flex:none; padding:8px 14px;" onclick="openTplModal('B')">配置</button>
+        </div>
+        <div class="row">
+          <div>
+            <div class="name">模板配置说明</div>
+            <div class="desc">查看标签写法、可用变量与示例</div>
+          </div>
+          <button class="btn" style="flex:none; padding:8px 14px;" onclick="openTplHelp()">说明</button>
         </div>
       </div>
       <div class="group">
@@ -747,40 +970,99 @@
   </div>
 </div>
 
-<!-- 添加记录弹窗 -->
-<div class="modal-mask" id="recordModal">
-  <div class="modal">
-    <h3 id="modalTitle">添加记录</h3>
-    <div class="hint">选择时间差与故障原因 · 长按可删除选项</div>
-    <div class="preview" id="preview">—</div>
-
-    <div class="field">
-      <label>时间差（分钟，可负）</label>
-      <div class="options" id="durOpts"></div>
+<!-- 模板配置（从下向上弹出，半屏高） -->
+<div class="modal-mask" id="tplModal">
+  <div class="sheet tpl-sheet">
+    <div class="sheet-head">
+      <span class="sheet-title" id="tplModalTitle">模板配置</span>
+      <span class="sheet-close" onclick="closeTplModal()">✕</span>
     </div>
-    <div class="field">
-      <label>故障原因</label>
-      <div class="options" id="reasonOpts"></div>
+    <div class="tpl-hint">
+      TOML 配置：<b>[record]</b> 列表显示 · <b>[copy]</b> 复制内容 · <b>[settings]</b> 时间格式<br>
+      可用变量：#开始时间 #结束时间 #账号全称 #账号简称 #日期 #故障原因
     </div>
-
-    <div class="modal-actions">
-      <button class="btn" onclick="closeRecordModal()">取消</button>
-      <button class="btn primary" onclick="confirmRecord()">确认添加</button>
+    <textarea id="tplInput" class="tpl-input" spellcheck="false"></textarea>
+    <div class="sheet-actions">
+      <button class="btn" onclick="openTplHelp()">说明</button>
+      <button class="btn" onclick="resetTpl()">默认</button>
+      <button class="btn primary" onclick="saveTpl()">保存</button>
     </div>
   </div>
 </div>
 
-<!-- 添加时间差弹窗 -->
-<div class="modal-mask preset-modal" id="durAddModal">
-  <div class="modal">
-    <h3>添加时间差</h3>
-    <div class="hint">输入分钟数，负数表示提前</div>
-    <div class="field">
-      <input type="number" id="durAddInput" placeholder="如 -3 或 7" style="width:100%;background:var(--card-2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:12px;font-size:16px;">
+<!-- 模板配置说明（上拉窗口） -->
+<div class="modal-mask" id="tplHelpModal">
+  <div class="sheet help-sheet">
+    <div class="sheet-head">
+      <span class="sheet-title">模板配置说明</span>
+      <span class="sheet-close" onclick="closeTplHelp()">✕</span>
     </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeDurAdd()">取消</button>
-      <button class="btn primary" onclick="confirmDurAdd()">添加</button>
+    <div class="help-body">
+      <h4>一、三个表（TOML）</h4>
+      <code>[record]</code> 主页列表与历史页的显示格式<br>
+      <code>[copy]</code> 点「复制」时导出的文本格式<br>
+      <code>[settings]</code> 设置项，目前支持时间格式
+      <h4>二、键名</h4>
+      <code>template</code> 模板内容（record / copy 表内）<br>
+      <code>time_format</code> 时间格式（settings 表内）
+      <h4>三、可用变量</h4>
+      <code>#开始时间</code> 记录开始时间（已含提前偏移）<br>
+      <code>#结束时间</code> 记录结束时间（已含延后偏移）<br>
+      <code>#账号全称</code> 如「布拉格のAAA」<br>
+      <code>#账号简称</code> 全称去掉「账号前缀」后的部分<br>
+      <code>#日期</code> 记录所属日期，如 2026-09-28<br>
+      <code>#故障原因</code> 当前选择的故障原因
+      <h4>四、时间格式</h4>
+      支持 yyyy 年、mm 月（首次出现）／分（之后出现）、dd 日、hh 时、ss 秒：
+      <span class="mono">time_format = "hh:mm:ss"</span>
+      <span class="mono">time_format = "yyyy-mm-dd hh:mm:ss"</span>
+      <h4>五、完整示例</h4>
+      <span class="mono"># 记录项：主页列表与历史页的显示格式
+[record]
+template = "#账号简称 #开始时间 到 #结束时间 #故障原因"
+
+# 复制项：点「复制」时导出的文本格式
+[copy]
+template = "#账号全称 #日期 #开始时间 到 #结束时间 （#故障原因）"
+
+# 设置项：时间显示格式
+[settings]
+time_format = "hh:mm:ss"</span>
+      <h4>六、注意</h4>
+      模板含 <code>#</code> 变量，因此值必须用引号包裹，否则会被当作注释截断；
+      以 <code>#</code> 开头的行为注释。两个账号的模板相互独立，需分别配置；留空则回落到默认模板。
+    </div>
+    <div class="sheet-actions">
+      <button class="btn primary" onclick="closeTplHelp()">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 下区配置页（点击卡片下区任意区域，从下向上弹出） -->
+<div class="modal-mask" id="cfgSheetModal">
+  <div class="sheet cfg-sheet">
+    <div class="sheet-head">
+      <span class="sheet-title" id="cfgSheetTitle">配置</span>
+      <span class="sheet-close" onclick="closeCfgSheet()">✕</span>
+    </div>
+    <div class="hint">点击卡片下区可随时打开此配置</div>
+    <div class="cfg-row2">
+      <div class="field">
+        <label>提前时间（秒）</label>
+        <input type="number" id="cfgAdvance" class="cfg-input" min="0" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>延后时间（秒）</label>
+        <input type="number" id="cfgDelay" class="cfg-input" min="0" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>故障原因</label>
+      <div class="options" id="cfgReasonOpts"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeCfgSheet()">取消</button>
+      <button class="btn primary" onclick="confirmCfgSheet()">确认</button>
     </div>
   </div>
 </div>
@@ -800,11 +1082,11 @@
   </div>
 </div>
 
-<!-- 编辑记录弹窗 -->
-<div class="modal-mask" id="editModal">
+<!-- 修改起止时间弹窗（点击开始/结束时间单独弹出） -->
+<div class="modal-mask" id="timeModal">
   <div class="modal">
-    <h3>编辑记录</h3>
-    <div class="hint">点击开始或结束时间进行修改</div>
+    <h3>修改起止时间</h3>
+    <div class="hint">切换开始 / 结束时间进行修改</div>
     <div class="edit-preview" id="editPreview">—</div>
 
     <div class="edit-mode-tabs">
@@ -813,23 +1095,37 @@
     </div>
 
     <div class="edit-field" id="editStartField">
-      <label>开始时间（HH:MM）</label>
-      <input type="text" id="editStart" value="00:00" placeholder="如 06:29" maxlength="5">
+      <label>开始时间（HH:MM:SS）</label>
+      <input type="text" id="editStart" value="00:00:00" placeholder="如 06:29:30" maxlength="8">
     </div>
     <div class="edit-field" id="editEndField" style="display:none;">
-      <label>结束时间（HH:MM）</label>
-      <input type="text" id="editEnd" value="00:00" placeholder="如 06:30" maxlength="5">
-    </div>
-
-    <div class="field">
-      <label>故障原因（点选修改）</label>
-      <div class="options" id="editReasonOpts"></div>
+      <label>结束时间（HH:MM:SS）</label>
+      <input type="text" id="editEnd" value="00:00:00" placeholder="如 06:30:30" maxlength="8">
     </div>
 
     <div class="modal-actions">
       <button class="btn danger" onclick="deleteFromEdit()">删除</button>
-      <button class="btn" onclick="closeEditModal()">取消</button>
-      <button class="btn primary" onclick="saveEdit()">保存</button>
+      <button class="btn" onclick="closeTimeModal()">取消</button>
+      <button class="btn primary" onclick="saveTimeEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改故障原因弹窗（点击原因单独弹出） -->
+<div class="modal-mask" id="reasonModal">
+  <div class="modal">
+    <h3>修改故障原因</h3>
+    <div class="hint">选择新的故障原因</div>
+    <div class="edit-preview" id="reasonEditPreview">—</div>
+
+    <div class="field">
+      <label>故障原因（点选）</label>
+      <div class="options" id="reasonEditOpts"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeReasonModal()">取消</button>
+      <button class="btn primary" onclick="saveReasonEdit()">保存</button>
     </div>
   </div>
 </div>
@@ -891,11 +1187,11 @@
 <div class="page" id="page-stats">
   <div class="topbar">
     <button class="icon-btn" onclick="goAccount()" title="返回">‹</button>
-    <h1>收入统计</h1>
+    <h1>记账统计</h1>
     <button class="icon-btn" onclick="exportStatsImage()" title="导出图片">📥</button>
   </div>
   <div class="scroll">
-    <div class="stats-wrap" id="statsWrap"></div>
+    <div class="rpt" id="statsWrap"></div>
   </div>
 </div>
 
@@ -956,18 +1252,60 @@
 /* ====== 数据层 ====== */
 const STORE_KEY = 'fault_recorder_v3';
 const DEFAULT_REASONS = ['卡了', '上厕所', '闪退', '接电话'];
-const DEFAULT_DURATIONS = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5];
+const DEFAULT_PREFIX = '布拉格の';                                  // 账号前缀（#账号简称 = 全称去掉前缀）
+const DEFAULT_TIME_FMT = 'hh:mm:ss';                                // 时间显示格式（yyyy-mm-dd hh:mm:ss）
+const DEFAULT_TPL_RECORD = '#账号简称 #开始时间 到 #结束时间 #故障原因'; // 记录项模板
+const DEFAULT_TPL_COPY   = '#账号全称 #开始时间 到 #结束时间 #故障原因'; // 复制项模板
+
+/* ====== 模板按账号分开：{ record, copy, timeFormat } × {A, B} ====== */
+function defaultTplSet() {
+  return { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT };
+}
+/* legacyFmt/legacyRec/legacyCopy 为旧版单份配置，用于迁移 */
+function normalizeTpl(t, legacyFmt, legacyRec, legacyCopy) {
+  const base = defaultTplSet();
+  if (typeof legacyRec === 'string' && legacyRec) base.record = legacyRec;
+  if (typeof legacyCopy === 'string' && legacyCopy) base.copy = legacyCopy;
+  if (typeof legacyFmt === 'string' && legacyFmt) base.timeFormat = legacyFmt;
+  const out = { A: {}, B: {} };
+  ['A', 'B'].forEach(k => {
+    const s = (t && typeof t === 'object' && t[k]) ? t[k] : {};
+    out[k] = {
+      record: (typeof s.record === 'string' && s.record) ? s.record : base.record,
+      copy: (typeof s.copy === 'string' && s.copy) ? s.copy : base.copy,
+      timeFormat: (typeof s.timeFormat === 'string' && s.timeFormat) ? s.timeFormat : base.timeFormat
+    };
+  });
+  return out;
+}
+function tplOf(btn) {
+  const k = (btn === 'B') ? 'B' : 'A';
+  if (!state.tpl || !state.tpl[k]) state.tpl = normalizeTpl(state.tpl);
+  return state.tpl[k];
+}
 
 let state = {
   nameA: '布拉格のAAA',
   nameB: '布拉格のBBB',
   customReasons: [],
   customDurations: [],
+  durUnit: 'sec',        // 'sec' 表示 customDurations 与 rec.dur 的单位是秒
+  offsetA: 30,           // 开始时间提前秒数（时间差 A / 提前）
+  offsetB: 30,           // 结束时间延迟秒数（时间差 B / 延后）
+  nameFontSize: 20,           // 主页中间账户名称字号
+  namePrefix: DEFAULT_PREFIX, // 账号前缀（#账号简称 = 全称去掉该前缀）
+  // 两个账号的模板分开配置 { A:{record,copy,timeFormat}, B:{...} }
+  tpl: {
+    A: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT },
+    B: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT }
+  },
+  defaultReason: '卡了', // 默认故障原因（在弹窗中设置）
+  btnReason: {},         // 各按钮单独覆盖的原因：{ A: '...', B: '...' }
   records: []
 };
 let currentFilter = 'ALL';
-let modalCtx = { btn: 'A', duration: 1, reason: '卡了' };
-let editCtx = { id: null, mode: 'start', reason: '' };
+let editCtx = { id: null, mode: 'start' };
+let reasonEditCtx = { id: null, reason: '' };
 let pendingCopy = '';
 let pressTimer = null;
 let historyNameSel = '';   // 历史页名字筛选当前值
@@ -982,16 +1320,40 @@ function load() {
       const d = JSON.parse(raw);
       if (d.records) {
         d.records.forEach(r => {
+          // 旧数据升级：HH:MM -> HH:MM:SS，时长 分钟 -> 秒
+          if (r.start && r.start.split(':').length === 2) r.start += ':00';
+          if (r.end && r.end.split(':').length === 2) r.end += ':00';
           if (r.dur === undefined) r.dur = parseDurFromTimes(r.start, r.end);
+          else if (d.durUnit !== 'sec' && typeof r.dur === 'number') r.dur = Math.round(r.dur * 60);
           // date 兜底：优先用 ts 推算，ts 缺失则视为今日（保证至少能显示）
           if (!r.date) {
             r.date = r.ts ? dateOfTs(r.ts) : dateOfTs(Date.now());
           }
         });
       }
+      // 迁移判定必须看原始数据 d，不能用合并后的 state（默认值已带 durUnit:'sec'）
+      const isOldDurUnit = d.durUnit !== 'sec';
       state = Object.assign({}, state, d);
       if (!Array.isArray(state.customReasons)) state.customReasons = [];
       if (!Array.isArray(state.customDurations)) state.customDurations = [];
+      // 新增字段兜底
+      if (typeof state.offsetA !== 'number' || state.offsetA < 0) state.offsetA = 30;
+      if (typeof state.offsetB !== 'number' || state.offsetB < 0) state.offsetB = 30;
+      if (!state.defaultReason) state.defaultReason = '卡了';
+      const fs = parseInt(state.nameFontSize, 10);
+      state.nameFontSize = (isNaN(fs) || fs < 12 || fs > 40) ? 20 : fs;
+      if (typeof state.namePrefix !== 'string') state.namePrefix = DEFAULT_PREFIX;
+      // 模板：兼容旧的单份配置（tplRecord / tplCopy / timeFormat），迁移为 A/B 两份
+      // 注意：必须用原始数据 d 判断，不能用合并后的 state（state 自带默认 tpl，会遮蔽旧配置）
+      state.tpl = normalizeTpl(d.tpl, d.timeFormat, d.tplRecord, d.tplCopy);
+      if (!state.btnReason || typeof state.btnReason !== 'object') state.btnReason = {};
+      if (isOldDurUnit) {
+        // 旧版自定义时长单位是分钟且可正可负，统一转为「秒 + 绝对值」
+        state.customDurations = state.customDurations
+          .map(x => Math.abs(Math.round(Number(x) * 60)))
+          .filter(x => x > 0);
+        state.durUnit = 'sec';
+      }
       // 立即回写一次，持久化兜底结果
       save();
     }
@@ -1003,28 +1365,47 @@ function save() {
 
 /* ====== 工具 ====== */
 function pad(n) { return String(n).padStart(2, '0'); }
-function nowHM() {
-  const d = new Date();
-  return pad(d.getHours()) + ':' + pad(d.getMinutes());
+function nowHMS(ts) {
+  const d = (ts === undefined || ts === null) ? new Date() : new Date(ts);
+  return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 function dateOfTs(ts) {
   const d = new Date(ts);
   return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 }
-// 给定开始时间和时长，算结束时间。时长正负都正确，跨天循环
-function addMin(hm, min) {
-  const [h, m] = hm.split(':').map(Number);
-  let total = h * 60 + m + min;
-  total = ((total % 1440) + 1440) % 1440;
-  return pad(Math.floor(total / 60)) + ':' + pad(total % 60);
+// 以 HH:MM:SS 为基准加减秒数，自动跨天循环
+function addSec(hms, sec) {
+  const p = String(hms).split(':').map(Number);
+  let total = p[0] * 3600 + p[1] * 60 + (p[2] || 0) + sec;
+  total = ((total % 86400) + 86400) % 86400;
+  return pad(Math.floor(total / 3600)) + ':' + pad(Math.floor(total % 3600 / 60)) + ':' + pad(total % 60);
 }
-// 反算时长（用于兼容旧数据）
+// 秒数格式化：30秒 / 1分钟 / 1分30秒
+function fmtDur(sec) {
+  const s = Math.abs(Number(sec) || 0);
+  if (s < 60) return s + '秒';
+  const m = Math.floor(s / 60), r = s % 60;
+  return r === 0 ? m + '分钟' : m + '分' + r + '秒';
+}
+// HH:MM:SS 归一化（只输 HH:MM 时秒补 00）
+function normHMS(s) {
+  if (!s) return '';
+  const m = String(s).trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!m) return '';
+  return pad(parseInt(m[1],10)) + ':' + pad(parseInt(m[2],10)) + ':' + pad(parseInt(m[3] || '0',10));
+}
+function isValidHMS(s) {
+  return /^([01]?\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(s);
+}
+// 反算时长（秒），兼容 HH:MM 与 HH:MM:SS，用于兼容旧数据
 function parseDurFromTimes(start, end) {
-  const [sh, sm] = start.split(':').map(Number);
-  const [eh, em] = end.split(':').map(Number);
-  let d = (eh*60 + em) - (sh*60 + sm);
-  if (d > 720) d -= 1440;
-  if (d < -720) d += 1440;
+  const sp = String(start).split(':').map(Number);
+  const ep = String(end).split(':').map(Number);
+  const a = sp[0]*3600 + sp[1]*60 + (sp[2] || 0);
+  const b = ep[0]*3600 + ep[1]*60 + (ep[2] || 0);
+  let d = b - a;
+  if (d > 43200) d -= 86400;
+  if (d < -43200) d += 86400;
   return d;
 }
 // 由结束时间反推时长：dur = end - start（处理跨天，取绝对值最小方向）
@@ -1033,11 +1414,6 @@ function durFromEnd(start, end) {
 }
 function allReasons() {
   return DEFAULT_REASONS.concat(state.customReasons);
-}
-function allDurations() {
-  // 合并默认和用户添加的，去重，排序（负的在前）
-  const set = new Set(DEFAULT_DURATIONS.concat(state.customDurations));
-  return Array.from(set).sort((a,b) => a-b);
 }
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -1056,7 +1432,7 @@ const PAGE_TITLES = {
   'page-home': '故障记录',
   'page-account': '记账',
   'page-templates': '模板管理',
-  'page-stats': '收入统计',
+  'page-stats': '记账统计',
   'page-history': '历史记录',
   'page-settings': '设置'
 };
@@ -1092,7 +1468,7 @@ function goHistory() {
   closeNameDropdown();
   renderHistory();
 }
-function goHome() { showPage('page-home'); renderButtonLabels(); renderRecords(); }
+function goHome() { showPage('page-home'); renderHome(); renderRecords(); }
 
 /* 自定义名字下拉控制 */
 function toggleNameDropdown() {
@@ -1211,74 +1587,496 @@ function updateDpLabel() {
 function syncSettings() {
   document.getElementById('setNameA').value = state.nameA;
   document.getElementById('setNameB').value = state.nameB;
+  const fsEl = document.getElementById('setFontSize');
+  if (fsEl) fsEl.value = state.nameFontSize || 20;
+  const pf = document.getElementById('setNamePrefix');
+  if (pf) pf.value = state.namePrefix || DEFAULT_PREFIX;
+  const dA = document.getElementById('setTplDescA');
+  if (dA) dA.textContent = tplOf('A').record || DEFAULT_TPL_RECORD;
+  const dB = document.getElementById('setTplDescB');
+  if (dB) dB.textContent = tplOf('B').record || DEFAULT_TPL_RECORD;
 }
 function saveSettings() {
   state.nameA = document.getElementById('setNameA').value.trim() || '按钮A';
   state.nameB = document.getElementById('setNameB').value.trim() || '按钮B';
+  const fsEl = document.getElementById('setFontSize');
+  if (fsEl) {
+    const fs = parseInt(fsEl.value, 10);
+    state.nameFontSize = (isNaN(fs) || fs < 12 || fs > 40) ? 20 : fs;
+  }
+  const pf = document.getElementById('setNamePrefix');
+  if (pf) state.namePrefix = pf.value.trim();
   save();
-  renderButtonLabels();
+  renderHome();
+  renderRecords();
   toast('设置已保存');
   goHome();
 }
 function renderButtonLabels() {
-  document.getElementById('btnA-label').textContent = state.nameA;
-  document.getElementById('btnB-label').textContent = state.nameB;
+  ['A', 'B'].forEach(btn => {
+    const el = document.getElementById('btn' + btn + '-name');
+    if (!el) return;
+    el.textContent = btn === 'A' ? state.nameA : state.nameB;
+    el.style.fontSize = (state.nameFontSize || 20) + 'px';
+  });
 }
 
-/* ====== 添加记录弹窗 ====== */
-function openRecordModal(btn) {
-  // 默认时间差始终为 1 分钟，默认故障原因始终为「卡了」
-  modalCtx = { btn, duration: 1, reason: '卡了' };
-  document.getElementById('modalTitle').textContent = '添加 ' + (btn==='A'?state.nameA:state.nameB) + ' 记录';
-  renderDurOpts();
-  renderReasonOpts();
-  updatePreview();
-  document.getElementById('recordModal').classList.add('show');
+/* ====== 实时计时记录 ====== */
+// 每个按钮独立的计时状态：null 表示空闲；运行期为 { startTs, timerId }
+let recState = { A: null, B: null };
+
+function getBtnReason(btn) {
+  return (state.btnReason && state.btnReason[btn]) || state.defaultReason;
 }
-function closeRecordModal() {
-  document.getElementById('recordModal').classList.remove('show');
+
+function toggleRecord(btn) {
+  if (recState[btn]) stopRecord(btn);
+  else startRecord(btn);
 }
-function renderDurOpts() {
-  const box = document.getElementById('durOpts');
-  box.innerHTML = '';
-  const durs = allDurations();
-  durs.forEach(d => {
-    const el = document.createElement('div');
-    const isSel = d === modalCtx.duration;
-    const isNeg = d < 0;
-    el.className = 'opt' + (isNeg ? ' neg' : '') + (isSel ? ' selected' : '');
-    el.textContent = d + ' 分钟';
-    el.dataset.val = d;
-    el.onclick = () => { modalCtx.duration = d; renderDurOpts(); updatePreview(); };
-    bindLongPress(el, () => removeDuration(d));
-    box.appendChild(el);
+
+function startRecord(btn) {
+  if (recState[btn]) return;
+  recState[btn] = { startTs: Date.now(), timerId: null };
+  recState[btn].timerId = setInterval(() => updateTimer(btn), 250);
+  renderHome();
+  toast(btn + ' 开始计时');
+}
+
+function stopRecord(btn) {
+  const rs = recState[btn];
+  if (!rs) return;
+  clearInterval(rs.timerId);
+  const startTs = rs.startTs;
+  const stopTs = Date.now();
+  recState[btn] = null;
+
+  const A = Math.max(0, Number(state.offsetA) || 0);  // 开始提前 A 秒
+  const B = Math.max(0, Number(state.offsetB) || 0);  // 结束延迟 B 秒
+  const start = addSec(nowHMS(startTs), -A);
+  const end = addSec(nowHMS(stopTs), B);
+  const reason = getBtnReason(btn);
+  const name = btn === 'A' ? state.nameA : state.nameB;
+
+  // 时长（秒）：end - start，处理跨天
+  const sp = start.split(':').map(Number), ep = end.split(':').map(Number);
+  let dur = (ep[0]*3600 + ep[1]*60 + ep[2]) - (sp[0]*3600 + sp[1]*60 + sp[2]);
+  if (dur < 0) dur += 86400;
+
+  const rec = {
+    id: startTs + '-' + Math.random().toString(36).slice(2,6),
+    btn: btn,
+    name: name,
+    start: start,
+    end: end,
+    dur: dur,
+    reason: reason,
+    date: dateOfTs(startTs),
+    ts: startTs
+  };
+  state.records.unshift(rec);
+  save();
+  renderRecords();
+  renderHome();
+  toast('已记录：' + name + ' ' + start + ' 到 ' + end);
+}
+
+function updateTimer(btn) {
+  const rs = recState[btn];
+  const el = document.getElementById('timer' + btn + '-val');
+  if (!rs || !el) return;
+  const sec = Math.floor((Date.now() - rs.startTs) / 1000);
+  el.textContent = pad(Math.floor(sec/60)) + ':' + pad(sec % 60);
+}
+
+/* ====== 账户名简称：去掉配置的账号前缀 ====== */
+function shortName(name) {
+  const s = String(name || '').trim();
+  const p = String(state.namePrefix || '').trim();
+  if (p && s.indexOf(p) === 0) {
+    const rest = s.slice(p.length).trim();
+    if (rest) return rest;
+  }
+  return s;
+}
+
+/* ====== 模板引擎 ====== */
+/* 时间格式：支持 yyyy-mm-dd hh:mm:ss（mm 首次出现为月份，其后为分钟） */
+function applyTimeFormat(pattern, d) {
+  const p2 = n => String(n).padStart(2, '0');
+  const hasDate = /yyyy/i.test(pattern);
+  let monthUsed = false;
+  return String(pattern).replace(/yyyy|mm|dd|hh|ss/gi, tok => {
+    const t = tok.toLowerCase();
+    if (t === 'yyyy') return d.getFullYear();
+    if (t === 'dd') return p2(d.getDate());
+    if (t === 'hh') return p2(d.getHours());
+    if (t === 'ss') return p2(d.getSeconds());
+    if (t === 'mm') {
+      if (hasDate && !monthUsed) { monthUsed = true; return p2(d.getMonth() + 1); }
+      return p2(d.getMinutes());
+    }
+    return tok;
   });
-  // 末尾 + 号按钮
-  const addBtn = document.createElement('button');
-  addBtn.className = 'opt-add';
-  addBtn.textContent = '+';
-  addBtn.onclick = openDurAdd;
-  box.appendChild(addBtn);
 }
-function renderReasonOpts() {
-  const box = document.getElementById('reasonOpts');
+// 由记录日期 + 时分秒构造 Date
+function recDateTime(rec, hms) {
+  const d = rec.date || dateOfTs(rec.ts || Date.now());
+  return new Date(d + 'T' + String(hms || '00:00:00'));
+}
+function fmtRecTime(rec, hms) {
+  return applyTimeFormat(tplOf(rec.btn).timeFormat || DEFAULT_TIME_FMT, recDateTime(rec, hms));
+}
+/* ====== TOML 解析（够用即可：表头 / 键值对 / 基础字符串 / 注释） ====== */
+/* 去掉行尾注释，但不破坏引号内的 # （如 "#开始时间"） */
+function tomlStripComment(line) {
+  let q = null, out = '';
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '\\' && q === '"') { out += c + (line[i+1] || ''); i++; continue; }
+      out += c;
+      if (c === q) q = null;
+      continue;
+    }
+    if (c === '"' || c === "'") { q = c; out += c; continue; }
+    if (c === '#') break;
+    out += c;
+  }
+  return out.trim();
+}
+function tomlUnquote(v) {
+  const s = String(v).trim();
+  if (s.length >= 2) {
+    const a = s[0], b = s[s.length - 1];
+    if (a === '"' && b === '"') {
+      return s.slice(1, -1)
+        .replace(/\\n/g, '\n').replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    }
+    if (a === "'" && b === "'") return s.slice(1, -1);
+  }
+  return s;
+}
+function tomlKey(k) {
+  return tomlUnquote(String(k).trim());
+}
+function parseToml(text) {
+  const tables = {}, root = {};
+  let cur = root;
+  String(text || '').split('\n').forEach(raw => {
+    const line = tomlStripComment(raw.trim());
+    if (!line) return;
+    const th = line.match(/^\[\s*(.+?)\s*\]$/);
+    if (th) {
+      const name = tomlKey(th[1]);
+      if (!tables[name]) tables[name] = {};
+      cur = tables[name];
+      return;
+    }
+    const kv = line.match(/^([^=]+?)\s*=\s*([\s\S]*)$/);
+    if (kv) cur[tomlKey(kv[1])] = tomlUnquote(kv[2]);
+  });
+  return { tables, root };
+}
+/* 表名 / 键名别名，兼容中文与常见写法 */
+const TPL_TABLE_ALIAS = {
+  'record': 'record', '记录项': 'record', '记录': 'record',
+  'copy': 'copy', '复制项': 'copy', '复制': 'copy',
+  'settings': 'settings', 'setting': 'settings', '设置项': 'settings', '设置': 'settings'
+};
+const TPL_KEY_TEMPLATE = ['template', 'tpl', '模板', '内容', 'value'];
+const TPL_KEY_TIMEFMT = ['time_format', 'timeformat', 'time-fmt', 'timeFormat', '时间格式', 'format'];
+function pickKey(obj, names) {
+  if (!obj) return '';
+  const lower = {};
+  Object.keys(obj).forEach(k => { lower[String(k).toLowerCase()] = obj[k]; });
+  for (const n of names) {
+    const v = lower[String(n).toLowerCase()];
+    if (v !== undefined && String(v).trim() !== '') return String(v).trim();
+  }
+  return '';
+}
+function tplTable(t, name) {
+  if (!t) return null;
+  const keys = Object.keys(t.tables || {});
+  const hit = keys.find(k => (TPL_TABLE_ALIAS[k] || TPL_TABLE_ALIAS[k.toLowerCase()] || '') === name);
+  return hit ? t.tables[hit] : null;
+}
+/* 模板配置文本 -> { record, copy, timeFormat }：TOML 为主，同时兼容旧的中括号标记写法 */
+function parseTemplate(text) {
+  const src = String(text || '');
+  if (/［\s*(记录项|复制项|设置项)/.test(src)) return parseLegacyTemplate(src);
+  const t = parseToml(src);
+  const rec = tplTable(t, 'record'), cp = tplTable(t, 'copy'), st = tplTable(t, 'settings');
+  return {
+    record: pickKey(rec, TPL_KEY_TEMPLATE) || pickKey(t.root, ['record', '记录项']) || '',
+    copy: pickKey(cp, TPL_KEY_TEMPLATE) || pickKey(t.root, ['copy', '复制项']) || '',
+    timeFormat: pickKey(st, TPL_KEY_TIMEFMT) || pickKey(t.root, ['time_format', '时间格式']) || ''
+  };
+}
+/* 旧格式：［记录项］［复制项］各占一行，其下为模板内容；［设置项］下写 #时间格式= */
+function parseLegacyTemplate(text) {
+  const out = { record: '', copy: '', timeFormat: '' };
+  const map = { '记录项': 'record', '复制项': 'copy', '设置项': 'set' };
+  let sec = null;
+  String(text || '').split('\n').forEach(line => {
+    const t = line.trim();
+    const mh = t.match(/^[［\[]?\s*(记录项|复制项|设置项)\s*[］\]]?$/);
+    if (mh) { sec = map[mh[1]] || null; return; }
+    if (!sec || !t) return;
+    if (sec === 'set') {
+      const m = t.match(/^#?\s*时间格式\s*[=:：]\s*(.+)$/);
+      if (m) out.timeFormat = m[1].trim();
+      return;
+    }
+    out[sec] += (out[sec] ? '\n' : '') + t;
+  });
+  return out;
+}
+/* 渲染模板：#开始时间 #结束时间 #账号全称 #账号简称 #日期 #故障原因 */
+// forceFullName=true 时历史页名称统一用全称
+function renderTpl(tpl, rec, forceFullName) {
+  const full = String(rec.name || '');
+  const nmFull = full;
+  const nmShort = forceFullName ? full : shortName(full);
+  return String(tpl || '')
+    .replace(/#账号全称/g, nmFull)
+    .replace(/#账号简称/g, nmShort)
+    .replace(/#开始时间/g, fmtRecTime(rec, rec.start))
+    .replace(/#结束时间/g, fmtRecTime(rec, rec.end))
+    .replace(/#日期/g, rec.date || dateOfTs(rec.ts || Date.now()))
+    .replace(/#故障原因/g, rec.reason || '')
+    .replace(/#时间格式/g, tplOf(rec.btn).timeFormat || DEFAULT_TIME_FMT);
+}
+/* ====== 日期标题行：只含 #日期（可带标点如「#日期：」）的行，按日期分组只渲染一次 ====== */
+const TPL_BODY_VARS = /#开始时间|#结束时间|#账号全称|#账号简称|#故障原因|#时间格式/;
+function splitTpl(tpl) {
+  const src = String(tpl || '');
+  const head = [], body = [];
+  src.split('\n').forEach(l => {
+    if (l.indexOf('#日期') >= 0 && !TPL_BODY_VARS.test(l)) head.push(l);
+    else body.push(l);
+  });
+  const headStr = head.join('\n').trim();
+  let line = body.join('\n').replace(/^\n+|\n+$/g, '');
+  if (!line && headStr) line = DEFAULT_TPL_RECORD;   // 只有标题行时，记录行回落到默认
+  if (!headStr) line = src;                          // 无标题行时整份模板即记录行
+  return { head: headStr, line: line };
+}
+/* 按日期分组渲染纯文本（复制/导出用）：标题行每个日期只出现一次 */
+function renderTplGrouped(tplOf, recs, forceFullName) {
+  const out = [];
+  const emitted = new Set();
+  recs.forEach(r => {
+    const s = splitTpl(tplOf(r));
+    const day = r.date || dateOfTs(r.ts || Date.now());
+    if (s.head && !emitted.has(day)) {
+      out.push(renderTpl(s.head, r, forceFullName));
+      emitted.add(day);
+    }
+    out.push(renderTpl(s.line, r, forceFullName));
+  });
+  return out.join('\n');
+}
+
+/* 渲染为 HTML：开始/结束/原因保留可点击（主页记录项） */
+function renderTplHtml(tpl, rec) {
+  const full = String(rec.name || '');
+  const html = {
+    '#账号全称': escapeHtml(full),
+    '#账号简称': escapeHtml(shortName(full)),
+    '#开始时间': '<span class="time-edit" onclick="openTimeModal(\'' + rec.id + '\', \'start\')">' + escapeHtml(fmtRecTime(rec, rec.start)) + '</span>',
+    '#结束时间': '<span class="time-edit" onclick="openTimeModal(\'' + rec.id + '\', \'end\')">' + escapeHtml(fmtRecTime(rec, rec.end)) + '</span>',
+    '#日期': escapeHtml(rec.date || dateOfTs(rec.ts || Date.now())),
+    '#故障原因': '<span class="reason-edit" onclick="openReasonModal(\'' + rec.id + '\')">' + escapeHtml(rec.reason || '') + '</span>',
+    '#时间格式': escapeHtml(tplOf(rec.btn).timeFormat || DEFAULT_TIME_FMT)
+  };
+  const re = /#账号全称|#账号简称|#开始时间|#结束时间|#日期|#故障原因|#时间格式/g;
+  let out = '', last = 0, m;
+  const src = String(tpl || '');
+  while ((m = re.exec(src)) !== null) {
+    out += escapeHtml(src.slice(last, m.index)) + html[m[0]];
+    last = m.index + m[0].length;
+  }
+  return out + escapeHtml(src.slice(last));
+}
+
+/* 单条记录的精确时长（秒）：优先用 dur，缺失则按起止时间推算 */
+function recordSeconds(rec) {
+  let sec = Number(rec.dur);
+  if (!isFinite(sec) || sec <= 0) {
+    const sp = String(rec.start || '00:00:00').split(':').map(Number);
+    const ep = String(rec.end || '00:00:00').split(':').map(Number);
+    sec = (ep[0]*3600 + ep[1]*60 + (ep[2]||0)) - (sp[0]*3600 + sp[1]*60 + (sp[2]||0));
+    if (sec < 0) sec += 86400;
+  }
+  return Math.max(0, Math.round(sec));
+}
+/* 今日该账号的全部记录时长之和（秒，精确累加，不取整不估算） */
+function todayTotalSeconds(btn) {
+  const today = dateOfTs(Date.now());
+  let sum = 0;
+  (state.records || []).forEach(r => {
+    if (r.btn !== btn) return;
+    if ((r.date || dateOfTs(r.ts || Date.now())) !== today) return;
+    sum += recordSeconds(r);
+  });
+  return sum;
+}
+/* 秒 -> m:ss / h:mm:ss（精确到秒） */
+function fmtTotalSeconds(sec) {
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  const p2 = n => String(n).padStart(2, '0');
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return h > 0 ? (h + ':' + p2(m) + ':' + p2(ss)) : (m + ':' + p2(ss));
+}
+
+/* ====== 下区配置页（点击卡片下区任意区域，从下向上弹出，布局同最初的弹窗） ====== */
+let cfgSheetCtx = { btn: null, reason: '' };
+function openBottomCfg(btn) {
+  cfgSheetCtx.btn = btn;
+  cfgSheetCtx.reason = getBtnReason(btn);
+  const name = btn === 'A' ? state.nameA : state.nameB;
+  document.getElementById('cfgSheetTitle').textContent = '配置（' + shortName(name) + '）';
+  document.getElementById('cfgAdvance').value = state.offsetA;
+  document.getElementById('cfgDelay').value = state.offsetB;
+  renderCfgReasonOpts();
+  document.getElementById('cfgSheetModal').classList.add('show');
+}
+function renderCfgReasonOpts() {
+  const box = document.getElementById('cfgReasonOpts');
+  if (!box) return;
   box.innerHTML = '';
   allReasons().forEach(r => {
     const el = document.createElement('div');
-    const isSel = r === modalCtx.reason;
-    el.className = 'opt' + (isSel ? ' selected' : '');
+    el.className = 'opt' + (r === cfgSheetCtx.reason ? ' selected' : '');
     el.textContent = r;
     el.dataset.val = r;
-    el.onclick = () => { modalCtx.reason = r; renderReasonOpts(); updatePreview(); };
+    el.onclick = () => { cfgSheetCtx.reason = r; renderCfgReasonOpts(); };
     bindLongPress(el, () => removeReason(r));
     box.appendChild(el);
   });
-  // 末尾 + 号
   const addBtn = document.createElement('button');
   addBtn.className = 'opt-add';
   addBtn.textContent = '+';
   addBtn.onclick = openReasonAdd;
   box.appendChild(addBtn);
+}
+function closeCfgSheet() {
+  document.getElementById('cfgSheetModal').classList.remove('show');
+  cfgSheetCtx.btn = null;
+}
+function confirmCfgSheet() {
+  const btn = cfgSheetCtx.btn;
+  const a = parseInt(document.getElementById('cfgAdvance').value, 10);
+  const b = parseInt(document.getElementById('cfgDelay').value, 10);
+  state.offsetA = (isNaN(a) || a < 0) ? 0 : a;
+  state.offsetB = (isNaN(b) || b < 0) ? 0 : b;
+  if (btn && cfgSheetCtx.reason) state.btnReason[btn] = cfgSheetCtx.reason;
+  save();
+  renderHome();
+  renderRecords();
+  closeCfgSheet();
+  toast('配置已保存');
+}
+
+/* ====== 模板配置（按账号分开，半屏，从下向上） ====== */
+let tplModalBtn = 'A';
+/* 字符串 -> TOML 基础字符串（带引号并转义），保证 # 等字符安全 */
+function tomlStr(v) {
+  return String(v === undefined || v === null ? '' : v)
+    .replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+}
+function buildTplText(btn) {
+  const t = tplOf(btn);
+  return '# 记录项：主页列表与历史页的显示格式\n'
+       + '[record]\n'
+       + 'template = "' + tomlStr(t.record || DEFAULT_TPL_RECORD) + '"\n\n'
+       + '# 复制项：点「复制」时导出的文本格式\n'
+       + '[copy]\n'
+       + 'template = "' + tomlStr(t.copy || DEFAULT_TPL_COPY) + '"\n\n'
+       + '# 设置项：时间显示格式\n'
+       + '[settings]\n'
+       + 'time_format = "' + tomlStr(t.timeFormat || DEFAULT_TIME_FMT) + '"\n';
+}
+function openTplModal(btn) {
+  tplModalBtn = (btn === 'B') ? 'B' : 'A';
+  const name = tplModalBtn === 'A' ? state.nameA : state.nameB;
+  document.getElementById('tplModalTitle').textContent = '模板配置（' + shortName(name) + '）';
+  document.getElementById('tplInput').value = buildTplText(tplModalBtn);
+  document.getElementById('tplModal').classList.add('show');
+}
+function closeTplModal() { document.getElementById('tplModal').classList.remove('show'); }
+function resetTpl() {
+  const t = tplOf(tplModalBtn);
+  t.record = DEFAULT_TPL_RECORD;
+  t.copy = DEFAULT_TPL_COPY;
+  t.timeFormat = DEFAULT_TIME_FMT;
+  document.getElementById('tplInput').value = buildTplText(tplModalBtn);
+  toast('已恢复默认模板');
+}
+function saveTpl() {
+  const p = parseTemplate(document.getElementById('tplInput').value);
+  const t = tplOf(tplModalBtn);
+  t.record = p.record || DEFAULT_TPL_RECORD;
+  t.copy = p.copy || DEFAULT_TPL_COPY;
+  if (p.timeFormat) t.timeFormat = p.timeFormat;
+  save();
+  closeTplModal();
+  renderHome();
+  renderRecords();
+  toast('模板已保存');
+}
+
+/* ====== 模板配置说明（上拉窗口） ====== */
+function openTplHelp() { document.getElementById('tplHelpModal').classList.add('show'); }
+function closeTplHelp() { document.getElementById('tplHelpModal').classList.remove('show'); }
+
+/* ====== 页面渲染（故障主页） ====== */
+function renderHome() {
+  renderButtonLabels();
+  const today = dateOfTs(Date.now());
+  ['A', 'B'].forEach(btn => {
+    const name = btn === 'A' ? state.nameA : state.nameB;
+
+    // 上区中部：当天日期（一行完整显示）
+    const dateEl = document.getElementById('rcDate' + btn);
+    if (dateEl) dateEl.textContent = today;
+    // 上区右部：今日该账号的记录总时长（精确求和到秒，不做估算）
+    const totalEl = document.getElementById('rcTotal' + btn);
+    if (totalEl) totalEl.textContent = '今日 ' + fmtTotalSeconds(todayTotalSeconds(btn));
+    // 中区：开始/停止提示
+    const running = !!recState[btn];
+    const sub = document.getElementById('btn' + btn + '-sub');
+    if (sub) sub.textContent = running ? '点击停止计时' : '点击开始记录';
+    const midEl = document.getElementById('btn' + btn);
+    if (midEl) midEl.classList.toggle('running', running);
+    // 中区分上下两部分：下部分为计时 div，默认预留高度（始终占位）
+    const timer = document.getElementById('timer' + btn);
+    if (timer) {
+      timer.classList.toggle('running', running);
+      const valEl = document.getElementById('timer' + btn + '-val');
+      if (valEl) {
+        if (running) updateTimer(btn);
+        else valEl.textContent = '00:00';
+      }
+    }
+    // 下区：左=提前秒数，中=故障原因，右=延后秒数（只显示值，无文字说明）
+    const rEl = document.getElementById('btn' + btn + '-reason');
+    if (rEl) rEl.textContent = getBtnReason(btn);
+    const advEl = document.getElementById('rcAdvance' + btn);
+    if (advEl) advEl.textContent = state.offsetA + '秒';
+    const dlyEl = document.getElementById('rcDelay' + btn);
+    if (dlyEl) dlyEl.textContent = state.offsetB + '秒';
+  });
+
+  // 页签与复制按钮：显示账户名简称
+  const tabA = document.getElementById('tabA'), tabB = document.getElementById('tabB');
+  if (tabA) tabA.textContent = shortName(state.nameA);
+  if (tabB) tabB.textContent = shortName(state.nameB);
+  const cpA = document.getElementById('copyBtnA'), cpB = document.getElementById('copyBtnB');
+  if (cpA) cpA.textContent = '📋 复制 ' + shortName(state.nameA);
+  if (cpB) cpB.textContent = '📋 复制 ' + shortName(state.nameB);
 }
 
 /* 长按绑定：返回前会抖动提示，松手前不触发删除 */
@@ -1326,23 +2124,6 @@ function execConfirm() {
   if (typeof fn === 'function') fn();
 }
 
-function removeDuration(d) {
-  if (DEFAULT_DURATIONS.includes(d)) {
-    toast('默认时间差不可删除');
-    return;
-  }
-  showConfirm('删除时间差', '确定删除「' + d + ' 分钟」？', () => {
-    state.customDurations = state.customDurations.filter(x => x !== d);
-    save();
-    if (modalCtx.duration === d) {
-      const durs = allDurations();
-      modalCtx.duration = durs.length ? durs[durs.length-1] : 1;
-    }
-    renderDurOpts();
-    updatePreview();
-    toast('已删除');
-  });
-}
 function removeReason(r) {
   if (DEFAULT_REASONS.includes(r)) {
     toast('默认原因不可删除');
@@ -1350,34 +2131,14 @@ function removeReason(r) {
   }
   showConfirm('删除原因', '确定删除「' + r + '」？', () => {
     state.customReasons = state.customReasons.filter(x => x !== r);
+    // 同步清理各按钮的覆盖选择
+    ['A', 'B'].forEach(b => { if (state.btnReason[b] === r) delete state.btnReason[b]; });
+    if (state.defaultReason === r) state.defaultReason = allReasons()[0];
     save();
-    if (modalCtx.reason === r) modalCtx.reason = allReasons()[0];
-    renderReasonOpts();
-    updatePreview();
+    renderHome();
+    if (reasonSheetCtx.btn) renderSheetReasonOpts();
     toast('已删除');
   });
-}
-
-/* 添加时间差弹窗 */
-function openDurAdd() {
-  document.getElementById('durAddInput').value = '';
-  document.getElementById('durAddModal').classList.add('show');
-  setTimeout(() => document.getElementById('durAddInput').focus(), 100);
-}
-function closeDurAdd() { document.getElementById('durAddModal').classList.remove('show'); }
-function confirmDurAdd() {
-  const v = parseInt(document.getElementById('durAddInput').value, 10);
-  if (isNaN(v)) { toast('请输入数字'); return; }
-  if (v === 0) { toast('不能为 0'); return; }
-  if (Math.abs(v) > 720) { toast('绝对值不能超过 720'); return; }
-  if (allDurations().includes(v)) { toast('该时间差已存在'); return; }
-  state.customDurations.push(v);
-  save();
-  modalCtx.duration = v;
-  closeDurAdd();
-  renderDurOpts();
-  updatePreview();
-  toast('已添加 ' + v + ' 分钟');
 }
 
 /* 添加原因弹窗 */
@@ -1393,47 +2154,9 @@ function confirmReasonAdd() {
   if (allReasons().includes(v)) { toast('该原因已存在'); return; }
   state.customReasons.push(v);
   save();
-  modalCtx.reason = v;
   closeReasonAdd();
-  renderReasonOpts();
-  updatePreview();
+  if (reasonSheetCtx.btn) renderSheetReasonOpts();
   toast('已添加「' + v + '」');
-}
-
-/* 关键：负时长时，开始 = 当前 - |dur|，结束 = 当前；正时长反之。保证 start <= end */
-function computeTimes(dur) {
-  const now = nowHM();
-  if (dur >= 0) {
-    return { start: now, end: addMin(now, dur) };
-  } else {
-    return { start: addMin(now, dur), end: now };
-  }
-}
-function updatePreview() {
-  const name = modalCtx.btn === 'A' ? state.nameA : state.nameB;
-  const { start, end } = computeTimes(modalCtx.duration);
-  document.getElementById('preview').textContent = name + ' ' + start + ' 到 ' + end + ' ' + modalCtx.reason;
-}
-function confirmRecord() {
-  const name = modalCtx.btn === 'A' ? state.nameA : state.nameB;
-  const { start, end } = computeTimes(modalCtx.duration);
-  const now = Date.now();
-  const rec = {
-    id: now + '-' + Math.random().toString(36).slice(2,6),
-    btn: modalCtx.btn,
-    name: name,
-    start: start,
-    end: end,
-    dur: modalCtx.duration,
-    reason: modalCtx.reason,
-    date: dateOfTs(now),
-    ts: now
-  };
-  state.records.unshift(rec);
-  save();
-  renderRecords();
-  closeRecordModal();
-  toast('已添加：' + name + ' ' + start + ' 到 ' + end + ' ' + modalCtx.reason);
 }
 
 /* ====== 列表渲染 ====== */
@@ -1457,18 +2180,31 @@ function renderRecords() {
     box.innerHTML = '<div class="empty">今天暂无记录，点击上方按钮添加</div>';
     return;
   }
-  box.innerHTML = list.map(r => {
-    // 开始、结束都可单独点击编辑
-    const text = escapeHtml(r.name) + ' ' +
-      '<span class="time-edit" onclick="openEditModal(\'' + r.id + '\', \'start\')">' + escapeHtml(r.start) + '</span>' +
-      ' 到 ' +
-      '<span class="time-edit" onclick="openEditModal(\'' + r.id + '\', \'end\')">' + escapeHtml(r.end) + '</span>' +
-      ' ' + escapeHtml(r.reason);
+  // 模板里若有「只含 #日期」的标题行，则按日期分组，该行只在每组顶部出现一次
+  const hasHead = list.some(r => splitTpl(tplOf(r.btn).record).head);
+  const itemHtml = r => {
+    // 按账号记录格式渲染；开始、结束、原因仍可单独点击修改
+    const text = renderTplHtml(splitTpl(tplOf(r.btn).record).line, r);
     return '<div class="record-item">' +
       '<div class="text">' + text + '</div>' +
       '<span class="tag' + (r.btn === 'B' ? ' b' : '') + '">' + r.btn + '</span>' +
       '<button class="del" onclick="delRecord(\'' + r.id + '\')">×</button>' +
     '</div>';
+  };
+  if (!hasHead) { box.innerHTML = list.map(itemHtml).join(''); return; }
+  const groups = {};
+  list.forEach(r => {
+    const k = r.date || dateOfTs(r.ts || Date.now());
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(r);
+  });
+  box.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(day => {
+    // 取该组内第一条「模板含标题行」的记录来渲染标题（不同账号模板可不同）
+    const first = groups[day].find(r => splitTpl(tplOf(r.btn).record).head);
+    const headHtml = first
+      ? '<div class="day-head">' + escapeHtml(renderTpl(splitTpl(tplOf(first.btn).record).head, first, false)) + '</div>'
+      : '';
+    return headHtml + groups[day].map(itemHtml).join('');
   }).join('');
 }
 function delRecord(id) {
@@ -1527,30 +2263,20 @@ function clearAllAccount() {
 }
 
 /* ====== 编辑记录弹窗 ====== */
-function openEditModal(id, mode) {
+/* ---- 起止时间修改窗口（点击开始/结束时间单独弹出） ---- */
+function openTimeModal(id, mode) {
   const rec = state.records.find(r => r.id === id);
   if (!rec) return;
   editCtx.id = id;
-  editCtx.mode = mode || 'start';
-  editCtx.reason = rec.reason;
   document.getElementById('editStart').value = rec.start;
   document.getElementById('editEnd').value = rec.end;
-  renderEditReasonOpts();
-  setEditMode(editCtx.mode);
+  setEditMode(mode || 'start');
   updateEditPreview();
-  document.getElementById('editModal').classList.add('show');
+  document.getElementById('timeModal').classList.add('show');
 }
-function renderEditReasonOpts() {
-  const box = document.getElementById('editReasonOpts');
-  box.innerHTML = '';
-  allReasons().forEach(r => {
-    const el = document.createElement('div');
-    const isSel = r === editCtx.reason;
-    el.className = 'opt' + (isSel ? ' selected' : '');
-    el.textContent = r;
-    el.onclick = () => { editCtx.reason = r; renderEditReasonOpts(); updateEditPreview(); };
-    box.appendChild(el);
-  });
+function closeTimeModal() {
+  document.getElementById('timeModal').classList.remove('show');
+  editCtx.id = null;
 }
 function setEditMode(mode) {
   editCtx.mode = mode;
@@ -1567,50 +2293,75 @@ function setEditMode(mode) {
   }
   updateEditPreview();
 }
-function closeEditModal() {
-  document.getElementById('editModal').classList.remove('show');
-  editCtx.id = null;
-}
-function isValidHM(s) {
-  return /^([01]?\d|2[0-3]):[0-5]\d$/.test(s);
-}
-function normHM(s) {
-  // 容错：补零，如 6:29 -> 06:29
-  if (!s) return '';
-  const m = s.trim().match(/^(\d{1,2}):(\d{1,2})$/);
-  if (!m) return '';
-  return pad(parseInt(m[1],10)) + ':' + pad(parseInt(m[2],10));
-}
 function updateEditPreview() {
   const rec = state.records.find(r => r.id === editCtx.id);
   if (!rec) return;
   const rawStart = document.getElementById('editStart').value || rec.start;
   const rawEnd = document.getElementById('editEnd').value || rec.end;
-  const startVal = normHM(rawStart) || rawStart;
-  const endVal = normHM(rawEnd) || rawEnd;
-  document.getElementById('editPreview').textContent = rec.name + ' ' + startVal + ' 到 ' + endVal + ' ' + editCtx.reason;
+  const startVal = normHMS(rawStart) || rawStart;
+  const endVal = normHMS(rawEnd) || rawEnd;
+  document.getElementById('editPreview').textContent = rec.name + ' ' + startVal + ' 到 ' + endVal + ' ' + rec.reason;
 }
-function saveEdit() {
+function saveTimeEdit() {
   const rec = state.records.find(r => r.id === editCtx.id);
-  if (!rec) { closeEditModal(); return; }
-  // 时间校验 + 容错归一
+  if (!rec) { closeTimeModal(); return; }
+  // 先校验归一化，再统一写回，避免校验失败时留下脏数据
+  let newStart = rec.start, newEnd = rec.end;
   if (editCtx.mode === 'start') {
-    const normed = normHM(document.getElementById('editStart').value);
-    if (!normed || !isValidHM(normed)) { toast('开始时间格式应为 HH:MM'); return; }
-    rec.start = normed;
-    rec.dur = durFromEnd(rec.start, rec.end);
+    const normed = normHMS(document.getElementById('editStart').value);
+    if (!normed || !isValidHMS(normed)) { toast('开始时间格式应为 HH:MM:SS'); return; }
+    newStart = normed;
   } else {
-    const normed = normHM(document.getElementById('editEnd').value);
-    if (!normed || !isValidHM(normed)) { toast('结束时间格式应为 HH:MM'); return; }
-    rec.end = normed;
-    rec.dur = durFromEnd(rec.start, rec.end);
+    const normed = normHMS(document.getElementById('editEnd').value);
+    if (!normed || !isValidHMS(normed)) { toast('结束时间格式应为 HH:MM:SS'); return; }
+    newEnd = normed;
   }
-  if (rec.dur === 0) { toast('开始与结束时间相同'); return; }
-  // 保存原因修改
-  rec.reason = editCtx.reason;
+  const dur = durFromEnd(newStart, newEnd);
+  if (dur === 0) { toast('开始与结束时间相同'); return; }
+  rec.start = newStart; rec.end = newEnd; rec.dur = dur;
   save();
   renderRecords();
-  closeEditModal();
+  closeTimeModal();
+  toast('已保存');
+}
+/* ---- 故障原因修改窗口（点击原因单独弹出） ---- */
+function openReasonModal(id) {
+  const rec = state.records.find(r => r.id === id);
+  if (!rec) return;
+  reasonEditCtx.id = id;
+  reasonEditCtx.reason = rec.reason;
+  renderReasonEditOpts();
+  updateReasonEditPreview();
+  document.getElementById('reasonModal').classList.add('show');
+}
+function closeReasonModal() {
+  document.getElementById('reasonModal').classList.remove('show');
+  reasonEditCtx.id = null;
+}
+function renderReasonEditOpts() {
+  const box = document.getElementById('reasonEditOpts');
+  box.innerHTML = '';
+  allReasons().forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'opt' + (r === reasonEditCtx.reason ? ' selected' : '');
+    el.textContent = r;
+    el.onclick = () => { reasonEditCtx.reason = r; renderReasonEditOpts(); updateReasonEditPreview(); };
+    box.appendChild(el);
+  });
+}
+function updateReasonEditPreview() {
+  const rec = state.records.find(r => r.id === reasonEditCtx.id);
+  if (!rec) return;
+  document.getElementById('reasonEditPreview').textContent =
+    rec.name + ' ' + rec.start + ' 到 ' + rec.end + ' ' + reasonEditCtx.reason;
+}
+function saveReasonEdit() {
+  const rec = state.records.find(r => r.id === reasonEditCtx.id);
+  if (!rec) { closeReasonModal(); return; }
+  rec.reason = reasonEditCtx.reason;
+  save();
+  renderRecords();
+  closeReasonModal();
   toast('已保存');
 }
 function deleteFromEdit() {
@@ -1619,7 +2370,7 @@ function deleteFromEdit() {
     state.records = state.records.filter(r => r.id !== editCtx.id);
     save();
     renderRecords();
-    closeEditModal();
+    closeTimeModal();
     toast('已删除');
   });
 }
@@ -1659,15 +2410,20 @@ function renderHistory() {
   box.innerHTML = days.map(day => {
     const list = groups[day].slice().sort((a,b) => a.ts - b.ts);
     const items = list.map(r => {
-      const text = escapeHtml(r.name) + ' ' + escapeHtml(r.start) + ' 到 ' + escapeHtml(r.end) + ' ' + escapeHtml(r.reason);
+      // 历史页：账户名称显示全称
+      const text = escapeHtml(renderTpl(splitTpl(tplOf(r.btn).record).line, r, true));
       return '<div class="h-item">' +
         '<div class="h-text">' + text + '</div>' +
         '<span class="h-tag' + (r.btn === 'B' ? ' b' : '') + '">' + r.btn + '</span>' +
         '<button class="h-copy" onclick="copyOneRecord(\'' + r.id + '\')" title="复制">📋</button>' +
       '</div>';
     }).join('');
+    // 标题行：模板里若有「只含 #日期」的行，用它的写法替换默认日期标题
+    const first = list.find(r => splitTpl(tplOf(r.btn).record).head);
+    const headTpl = first ? splitTpl(tplOf(first.btn).record).head : '';
+    const titleText = headTpl ? renderTpl(headTpl, first, true) : day;
     return '<div class="day-group">' +
-      '<div class="day-title"><span>' + day + '</span><span class="day-count">' + list.length + ' 条</span></div>' +
+      '<div class="day-title"><span>' + escapeHtml(titleText) + '</span><span class="day-count">' + list.length + ' 条</span></div>' +
       items +
     '</div>';
   }).join('');
@@ -1682,13 +2438,13 @@ function buildText(btn) {
   });
   if (recs.length === 0) return '';
   const sorted = recs.slice().sort((a,b) => a.ts - b.ts);
-  return sorted.map(r => r.name + ' ' + r.start + ' 到 ' + r.end + ' ' + r.reason).join('\n');
+  return renderTplGrouped(r => tplOf(r.btn).copy, sorted, false);
 }
 function copyByButton(btn) {
   const text = buildText(btn);
   if (!text) { toast('今天没有 ' + btn + ' 的记录'); return; }
   pendingCopy = text;
-  const name = btn === 'A' ? state.nameA : state.nameB;
+  const name = shortName(btn === 'A' ? state.nameA : state.nameB);
   document.getElementById('copyTitle').textContent = '复制 ' + btn + ' 记录（' + name + '）';
   document.getElementById('copyContent').textContent = text;
   document.getElementById('copyModal').classList.add('show');
@@ -1716,7 +2472,7 @@ function fallbackCopy(text, cb) {
 function exportAll() {
   if (state.records.length === 0) { toast('没有记录可导出'); return; }
   const sorted = state.records.slice().sort((a,b) => a.ts - b.ts);
-  const text = sorted.map(r => r.name + ' ' + r.start + ' 到 ' + r.end + ' ' + r.reason).join('\n');
+  const text = renderTplGrouped(r => tplOf(r.btn).copy, sorted, false);
   pendingCopy = text;
   document.getElementById('copyTitle').textContent = '导出全部记录';
   document.getElementById('copyContent').textContent = text;
@@ -1726,7 +2482,7 @@ function copyFiltered() {
   const recs = getHistoryFiltered();
   if (recs.length === 0) { toast('没有可复制的记录'); return; }
   const sorted = recs.slice().sort((a,b) => a.ts - b.ts);
-  const text = sorted.map(r => r.name + ' ' + r.start + ' 到 ' + r.end + ' ' + r.reason).join('\n');
+  const text = renderTplGrouped(r => tplOf(r.btn).copy, sorted, false);
   pendingCopy = text;
   const filter = historyDateSel;
   const nameSel = historyNameSel;
@@ -1739,7 +2495,7 @@ function copyFiltered() {
 function copyOneRecord(id) {
   const rec = state.records.find(r => r.id === id);
   if (!rec) { toast('记录不存在'); return; }
-  const text = rec.name + ' ' + rec.start + ' 到 ' + rec.end + ' ' + rec.reason;
+  const text = renderTplGrouped(() => tplOf(rec.btn).copy, [rec], false);
   const ok = () => toast('已复制');
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(ok).catch(() => fallbackCopy(text, ok));
@@ -1748,7 +2504,7 @@ function copyOneRecord(id) {
   }
 }
 load();
-renderButtonLabels();
+renderHome();
 renderRecords();
 
 // 输入变化实时更新编辑预览
@@ -1756,24 +2512,25 @@ document.getElementById('editStart').addEventListener('input', updateEditPreview
 document.getElementById('editEnd').addEventListener('input', updateEditPreview);
 
 // 回车确认添加预设
-document.getElementById('durAddInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmDurAdd(); });
 document.getElementById('reasonAddInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmReasonAdd(); });
 
 // 点击遮罩关闭弹窗
-['recordModal','durAddModal','reasonAddModal','editModal','copyModal','confirmModal','accSheetModal'].forEach(id => {
+['reasonAddModal','timeModal','reasonModal','copyModal','confirmModal','accSheetModal','tplModal','tplHelpModal','cfgSheetModal'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', e => { if (e.target === el) {
-    if (id === 'recordModal') closeRecordModal();
-    else if (id === 'durAddModal') closeDurAdd();
-    else if (id === 'reasonAddModal') closeReasonAdd();
-    else if (id === 'editModal') closeEditModal();
+    if (id === 'reasonAddModal') closeReasonAdd();
+    else if (id === 'timeModal') closeTimeModal();
+    else if (id === 'reasonModal') closeReasonModal();
     else if (id === 'copyModal') closeCopyModal();
     else if (id === 'confirmModal') closeConfirm();
     else if (id === 'accSheetModal') closeAccSheet();
+    else if (id === 'tplModal') closeTplModal();
+    else if (id === 'tplHelpModal') closeTplHelp();
+    else if (id === 'cfgSheetModal') closeCfgSheet();
   }});
 });
 
-// 点击外部关闭名字下拉与日期选择器
+// 点击外部关闭名字下拉、日期选择器与按钮原因菜单
 document.addEventListener('click', e => {
   const dd = document.getElementById('nameDropdown');
   if (dd && dd.classList.contains('open') && !dd.contains(e.target)) {
@@ -2170,64 +2927,282 @@ function confirmTplAdd() {
   toast('已添加模板');
 }
 
-/* 统计 */
+/* 统计（报表风格） *//* ====== 统计（报表风格） ====== */
 function sumBills(predicate) {
   return acct.bills.filter(predicate).reduce((s, b) => s + Number(b.amount), 0);
 }
-/* 当周范围（周一为一周开始，周日为结束） */
-function weekRange() {
+/* 金额格式化：整数不带小数，非整数保留两位，带千分位 */
+function fmtMoney(n) {
+  const v = Math.round(Math.abs(Number(n) || 0) * 100) / 100;
+  const [i, d] = v.toFixed(2).split('.');
+  const intPart = Number(i).toLocaleString('en-US');
+  return (Number(n) < 0 ? '-' : '') + '¥' + (d === '00' ? intPart : intPart + '.' + d);
+}
+/* 趋势图柱顶的紧凑金额：1234 -> 1.2k，12000 -> 1.2w */
+function fmtMoneyCompact(n) {
+  const v = Number(n) || 0;
+  if (v >= 10000) return (Math.round(v / 1000) / 10) + 'w';
+  if (v >= 1000) return (Math.round(v / 100) / 10) + 'k';
+  return String(Math.round(v * 10) / 10);
+}
+/* 汇总所有统计数据 */
+function statsData() {
+  const bills = acct.bills.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const total = bills.reduce((s, b) => s + Number(b.amount || 0), 0);
+  const count = bills.length;
+  const dates = bills.map(b => b.date).filter(Boolean);
+  const daySet = new Set(dates);
+  const first = dates[0] || '', last = dates[dates.length - 1] || '';
+  const monthsSet = new Set(dates.map(d => String(d).slice(0, 7)));
+  // 月度序列：从首账单月到当前月（最多取最近 12 个月）
   const now = new Date();
-  const ws = new Date(now);
-  ws.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-  const we = new Date(ws);
-  we.setDate(ws.getDate() + 6);
-  const f = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-  return { start: f(ws), end: f(we) };
+  const curM = now.getFullYear() + '-' + pad(now.getMonth() + 1);
+  const startM = first ? first.slice(0, 7) : curM;
+  const endM = (last && last.slice(0, 7) > curM) ? last.slice(0, 7) : curM;
+  const series = [];
+  let sy = Number(startM.slice(0, 4)), sm = Number(startM.slice(5, 7));
+  const ey = Number(endM.slice(0, 4)), em = Number(endM.slice(5, 7));
+  while (sy * 12 + sm <= ey * 12 + em) {
+    series.push({ key: sy + '-' + pad(sm), amount: 0, count: 0 });
+    sm++; if (sm > 12) { sm = 1; sy++; }
+  }
+  bills.forEach(b => {
+    const m = series.find(x => x.key === String(b.date || '').slice(0, 7));
+    if (m) { m.amount += Number(b.amount || 0); m.count++; }
+  });
+  const series12 = series.slice(-12);
+  const allMonths = series.slice();
+  const maxMonth = allMonths.reduce((a, b) => b.amount > a.amount ? b : a, { key: '', amount: 0, count: 0 });
+  const settled = bills.filter(b => b.settled);
+  const unsettled = bills.filter(b => !b.settled);
+  const uDates = unsettled.map(b => b.date).filter(Boolean).sort();
+  // 事由分布（按金额 Top 5）
+  const byItem = {};
+  bills.forEach(b => {
+    const k = b.item || '未填写';
+    if (!byItem[k]) byItem[k] = { amount: 0, count: 0 };
+    byItem[k].amount += Number(b.amount || 0); byItem[k].count++;
+  });
+  const topItems = Object.keys(byItem)
+    .map(k => ({ name: k, amount: byItem[k].amount, count: byItem[k].count }))
+    .sort((a, b) => b.amount - a.amount).slice(0, 5);
+  let spanDays = 0, coverage = 0;
+  if (first && last) {
+    spanDays = Math.round((new Date(last) - new Date(first)) / 86400000) + 1;
+    coverage = spanDays > 0 ? daySet.size / spanDays * 100 : 0;
+  }
+  return {
+    total, count, days: daySet.size, first, last,
+    months: monthsSet.size, spanDays, coverage,
+    avg: count ? total / count : 0,
+    perMonth: monthsSet.size ? total / monthsSet.size : 0,
+    maxMonth, series: series12,
+    settled: { n: settled.length, sum: settled.reduce((s, b) => s + Number(b.amount || 0), 0) },
+    unsettled: { n: unsettled.length, sum: unsettled.reduce((s, b) => s + Number(b.amount || 0), 0) },
+    uFirst: uDates[0] || '', uLast: uDates[uDates.length - 1] || '',
+    topItems
+  };
+}
+function statGenAt() {
+  const n = new Date();
+  return n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()) + ' ' + pad(n.getHours()) + ':' + pad(n.getMinutes());
+}
+function rptCard(k, v, s, tone) {
+  return '<div class="rpt-card"><div class="k">' + k + '</div>' +
+    '<div class="v' + (tone ? ' ' + tone : '') + '">' + v + '</div>' +
+    '<div class="s">' + s + '</div></div>';
 }
 function renderStats() {
-  const today = dateOfTs(Date.now());
-  const [ty, tm] = today.split('-').map(Number);
-  const wr = weekRange();
-  const weekTotal = sumBills(b => b.date >= wr.start && b.date <= wr.end);
-  const monthPrefix = ty + '-' + pad(tm);
-  const monthSettledSum = sumBills(b => b.date.indexOf(monthPrefix) === 0);
-  const yearPrefix = String(ty);
-  const yearTotal = sumBills(b => b.date.indexOf(yearPrefix) === 0);
+  const d = statsData();
   const box = document.getElementById('statsWrap');
-  box.innerHTML =
-    statCard('当周收入', weekTotal, wr.start + ' ~ ' + wr.end) +
-    statCard('当月收入', monthSettledSum, monthPrefix) +
-    statCard('当年收入', yearTotal, yearPrefix);
+  const chips = d.count === 0
+    ? '<span class="rpt-chip">暂无账单数据</span>'
+    : '<span class="rpt-chip">' + d.first + ' — ' + d.last + '</span>' +
+      '<span class="rpt-chip">' + d.count + ' 笔 · ' + fmtMoney(d.total) + '</span>' +
+      '<span class="rpt-chip">数据统计于 ' + statGenAt() + '</span>';
+  let html = '<div class="rpt-hero"><h2>记账记录</h2>' +
+    '<div class="rpt-sub">每日记账 · 数据保存在本设备</div>' +
+    '<div class="rpt-chips">' + chips + '</div></div>';
+  if (d.count === 0) {
+    html += '<div class="rpt-sec"><div class="empty" style="padding:48px 0;">还没有账单，回到记账页添加吧</div></div>';
+    box.innerHTML = html;
+    return;
+  }
+  const mm = d.maxMonth;
+  html += '<div class="rpt-grid">' +
+    rptCard('累计金额', fmtMoney(d.total), '共 ' + d.months + ' 个月', 'green') +
+    rptCard('记账笔数', d.count + ' 笔', '平均每笔 ' + fmtMoney(d.avg)) +
+    rptCard('记账天数', d.days + ' 天', '跨度 ' + d.spanDays + ' 天 · 覆盖率 ' + d.coverage.toFixed(1) + '%') +
+    rptCard('月均金额', fmtMoney(d.perMonth), '最高 ' + mm.key + ' 月') +
+    rptCard('已结算', fmtMoney(d.settled.sum), d.settled.n + ' 笔', 'green') +
+    rptCard('待结算', fmtMoney(d.unsettled.sum), d.unsettled.n + ' 笔', 'orange') +
+    '</div>';
+  if (d.unsettled.n > 0) {
+    html += '<div class="rpt-alert"><span class="dot"></span><span>待结算提醒：' + d.unsettled.n +
+      ' 笔共 ' + fmtMoney(d.unsettled.sum) + '（' + d.uFirst + ' 至 ' + d.uLast + '）尚未结算，请留意核对。</span></div>';
+  }
+  // 月度趋势（最多 12 个月，最高月高亮）
+  const maxAmt = Math.max.apply(null, d.series.map(m => m.amount).concat([0]));
+  html += '<div class="rpt-sec"><h3>月度趋势 <span class="tag">金额与笔数</span></h3><div class="rpt-bars">' +
+    d.series.map(m => {
+      const h = maxAmt > 0 ? Math.max(3, Math.round(m.amount / maxAmt * 110)) : 3;
+      return '<div class="rpt-bar' + (mm.amount > 0 && m.key === mm.key ? ' hot' : '') + '">' +
+        '<span class="amt">' + fmtMoneyCompact(m.amount) + '</span>' +
+        '<span class="bar" style="height:' + h + 'px"></span>' +
+        '<span class="m">' + m.key.slice(5) + '月</span>' +
+        '<span class="c">' + m.count + '笔</span></div>';
+    }).join('') + '</div></div>';
+  // 事由分布 Top 5
+  const topMax = d.topItems.length ? d.topItems[0].amount : 0;
+  html += '<div class="rpt-sec"><h3>事由分布 <span class="tag">金额 Top 5</span></h3>' +
+    d.topItems.map(t => {
+      const pct = topMax > 0 ? Math.round(t.amount / topMax * 100) : 0;
+      const pctAll = d.total > 0 ? (t.amount / d.total * 100).toFixed(1) : '0';
+      return '<div class="rpt-row"><div class="line1">' +
+        '<span class="nm">' + escapeHtml(t.name) + ' <i>' + t.count + ' 笔</i></span>' +
+        '<span class="amt">' + fmtMoney(t.amount) + ' · ' + pctAll + '%</span></div>' +
+        '<div class="track"><div class="fill" style="width:' + pct + '%"></div></div></div>';
+    }).join('') + '</div>';
+  html += '<div class="rpt-foot">数据统计于 ' + statGenAt() + ' · 导出图片请点右上角 📥</div>';
+  box.innerHTML = html;
 }
-function statCard(label, value, range) {
-  return '<div class="stats-card">' +
-    '<div class="s-label">' + label + '</div>' +
-    '<div class="s-value">¥' + Number(value).toFixed(2) + '</div>' +
-    '<div class="s-range">' + escapeHtml(range) + '</div>' +
-  '</div>';
-}
+/* 导出统计图片（与页面同款报表风格，2x 高清） */
 function exportStatsImage() {
-  const cards = [
-    { label: '当周收入', value: '¥' + sumBillsWeekly().toFixed(2) },
-    { label: '当月收入', value: '¥' + sumBillsMonthly().toFixed(2) },
-    { label: '当年收入', value: '¥' + sumBillsYearly().toFixed(2) }
-  ];
+  if (acct.bills.length === 0) { toast('没有账单数据可导出'); return; }
+  const d = statsData();
+  const genAt = statGenAt();
+  const W = 750, PAD = 32, GAP = 20;
+  const COLW = (W - PAD * 2 - GAP) / 2;
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
+  const cardH = 168, gridRows = 3;
+  const hasAlert = d.unsettled.n > 0;
+  const alertH = 118;
+  const trendH = 76 + 208;
+  const itemsH = 76 + d.topItems.length * 88 + 8;
+  const heroH = 232;
+  let H = 32 + heroH + 24 + gridRows * (cardH + GAP) - GAP;
+  if (hasAlert) H += GAP + alertH;
+  H += GAP + trendH + GAP + itemsH + GAP + 56 + 32;
   const canvas = document.createElement('canvas');
-  canvas.width = 600; canvas.height = 100 + cards.length * 120;
+  const S = 2;
+  canvas.width = W * S; canvas.height = H * S;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#0f1115'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#e8eaed'; ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('收入统计', canvas.width/2, 50);
-  cards.forEach((c, i) => {
-    const y = 100 + i * 120;
-    ctx.fillStyle = '#1a1d24'; roundRect(ctx, 30, y, 540, 100, 14); ctx.fill();
-    ctx.fillStyle = '#8b9099'; ctx.font = '14px sans-serif';
-    ctx.fillText(c.label, canvas.width/2, y + 35);
-    ctx.fillStyle = '#34c759'; ctx.font = 'bold 30px sans-serif';
-    ctx.fillText(c.value, canvas.width/2, y + 75);
+  ctx.scale(S, S);
+  const rr = (x, y, w, h, r) => { roundRect(ctx, x, y, w, h, r); };
+  const text = (s, x, y, opt) => {
+    opt = opt || {};
+    ctx.font = (opt.bold ? 'bold ' : '') + (opt.size || 24) + 'px ' + FONT;
+    ctx.fillStyle = opt.color || '#1f2d24';
+    ctx.textAlign = opt.align || 'left';
+    ctx.textBaseline = opt.base || 'alphabetic';
+    ctx.fillText(s, x, y);
+  };
+  // 背景
+  ctx.fillStyle = '#eef1f5'; ctx.fillRect(0, 0, W, H);
+  // 头部绿色卡片
+  const hx = PAD, hy = 32, hw = W - PAD * 2;
+  const grad = ctx.createLinearGradient(hx, hy, hx + hw, hy + heroH);
+  grad.addColorStop(0, '#009a68'); grad.addColorStop(1, '#00c389');
+  ctx.fillStyle = grad; rr(hx, hy, hw, heroH, 28); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.beginPath(); ctx.arc(hx + hw - 40, hy - 30, 110, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(hx + hw - 150, hy + heroH + 20, 75, 0, Math.PI * 2); ctx.fill();
+  text('记账记录', hx + 34, hy + 78, { bold: true, size: 48, color: '#fff' });
+  text('每日记账 · 数据保存在本设备', hx + 34, hy + 122, { size: 26, color: 'rgba(255,255,255,0.92)' });
+  // 胶囊标签（自动换行）
+  const chips = [
+    d.first + ' — ' + d.last,
+    d.count + ' 笔 · ' + fmtMoney(d.total),
+    '数据统计于 ' + genAt
+  ];
+  ctx.font = '24px ' + FONT;
+  let cx = hx + 34, cy = hy + 152, rowH = 60;
+  chips.forEach(c => {
+    const w = ctx.measureText(c).width + 44;
+    if (cx + w > hx + hw - 30) { cx = hx + 34; cy += rowH; }
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    rr(cx, cy, w, 48, 24); ctx.fill();
+    text(c, cx + 22, cy + 33, { size: 24, color: '#fff' });
+    cx += w + 16;
   });
+  // 六宫格统计卡
+  const cards = [
+    { k: '累计金额', v: fmtMoney(d.total), s: '共 ' + d.months + ' 个月', c: '#00a870' },
+    { k: '记账笔数', v: d.count + ' 笔', s: '平均每笔 ' + fmtMoney(d.avg), c: '#1f2d24' },
+    { k: '记账天数', v: d.days + ' 天', s: '跨度 ' + d.spanDays + ' 天 · 覆盖率 ' + d.coverage.toFixed(1) + '%', c: '#1f2d24' },
+    { k: '月均金额', v: fmtMoney(d.perMonth), s: '最高 ' + d.maxMonth.key + ' 月', c: '#1f2d24' },
+    { k: '已结算', v: fmtMoney(d.settled.sum), s: d.settled.n + ' 笔', c: '#00a870' },
+    { k: '待结算', v: fmtMoney(d.unsettled.sum), s: d.unsettled.n + ' 笔', c: '#f59e0b' }
+  ];
+  let gy = hy + heroH + 24;
+  cards.forEach((c, i) => {
+    const x = PAD + (i % 2) * (COLW + GAP), y = gy + Math.floor(i / 2) * (cardH + GAP);
+    ctx.fillStyle = '#fff'; rr(x, y, COLW, cardH, 24); ctx.fill();
+    text(c.k, x + 28, y + 48, { size: 26, color: '#7a8190' });
+    text(c.v, x + 28, y + 106, { bold: true, size: 44, color: c.c });
+    text(c.s, x + 28, y + 142, { size: 22, color: '#8b93a1' });
+  });
+  gy += gridRows * (cardH + GAP) - GAP;
+  // 待结算提醒
+  if (hasAlert) {
+    gy += GAP;
+    ctx.fillStyle = '#fffbeb'; rr(PAD, gy, W - PAD * 2, alertH, 20); ctx.fill();
+    ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 2; rr(PAD, gy, W - PAD * 2, alertH, 20); ctx.stroke();
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath(); ctx.arc(PAD + 34, gy + 40, 9, 0, Math.PI * 2); ctx.fill();
+    const msg = '待结算提醒：' + d.unsettled.n + ' 笔共 ' + fmtMoney(d.unsettled.sum) +
+      '（' + d.uFirst + ' 至 ' + d.uLast + '）尚未结算，请留意核对。';
+    ctx.font = '26px ' + FONT; ctx.fillStyle = '#92600a';
+    let line = '', ly = gy + 48, maxW = W - PAD * 2 - 90;
+    msg.split('').forEach(ch => {
+      if (ctx.measureText(line + ch).width > maxW) {
+        ctx.textAlign = 'left'; ctx.fillText(line, PAD + 54, ly); line = ch; ly += 38;
+      } else line += ch;
+    });
+    ctx.fillText(line, PAD + 54, ly);
+    gy += alertH;
+  }
+  // 月度趋势
+  gy += GAP;
+  ctx.fillStyle = '#fff'; rr(PAD, gy, W - PAD * 2, trendH, 24); ctx.fill();
+  text('月度趋势', PAD + 28, gy + 52, { bold: true, size: 32 });
+  text('金额与笔数', PAD + 28 + ctx.measureText('月度趋势').width + 60, gy + 52, { size: 24, color: '#8b93a1' });
+  const bars = d.series, maxAmt = Math.max.apply(null, bars.map(m => m.amount).concat([0]));
+  const innerW = W - PAD * 2 - 56, step = innerW / Math.max(1, bars.length);
+  const baseY = gy + 76 + 140, maxBarH = 118;
+  bars.forEach((m, i) => {
+    const bxc = PAD + 28 + step * i + step / 2;
+    const bh = maxAmt > 0 ? Math.max(4, Math.round(m.amount / maxAmt * maxBarH)) : 4;
+    const hot = d.maxMonth.amount > 0 && m.key === d.maxMonth.key;
+    ctx.fillStyle = hot ? '#f59e0b' : '#00a870';
+    const bw = Math.min(44, step - 8);
+    rr(bxc - bw / 2, baseY - bh, bw, bh, 8); ctx.fill();
+    text(fmtMoneyCompact(m.amount), bxc, baseY - bh - 12, { size: 20, color: '#5b6472', align: 'center' });
+    text(m.key.slice(5) + '月', bxc, baseY + 30, { size: 20, color: hot ? '#d97706' : '#5b6472', align: 'center', bold: hot });
+    text(m.count + '笔', bxc, baseY + 56, { size: 18, color: '#9aa1ad', align: 'center' });
+  });
+  gy += trendH;
+  // 事由分布 Top 5
+  gy += GAP;
+  ctx.fillStyle = '#fff'; rr(PAD, gy, W - PAD * 2, itemsH, 24); ctx.fill();
+  text('事由分布', PAD + 28, gy + 52, { bold: true, size: 32 });
+  text('金额 Top 5', PAD + 28 + ctx.measureText('事由分布').width + 60, gy + 52, { size: 24, color: '#8b93a1' });
+  const topMax = d.topItems.length ? d.topItems[0].amount : 0;
+  let iy = gy + 92;
+  d.topItems.forEach(t => {
+    const pct = topMax > 0 ? Math.round(t.amount / topMax * 100) : 0;
+    const pctAll = d.total > 0 ? (t.amount / d.total * 100).toFixed(1) : '0';
+    text(t.name + ' · ' + t.count + ' 笔', PAD + 28, iy, { size: 26, color: '#2a3830' });
+    text(fmtMoney(t.amount) + ' · ' + pctAll + '%', PAD + W - 60, iy, { size: 26, color: '#2a3830', align: 'right', bold: true });
+    ctx.fillStyle = '#eef1f5'; rr(PAD + 28, iy + 16, W - PAD * 2 - 56, 12, 6); ctx.fill();
+    ctx.fillStyle = '#00a870';
+    rr(PAD + 28, iy + 16, Math.max(4, (W - PAD * 2 - 56) * pct / 100), 12, 6); ctx.fill();
+    iy += 88;
+  });
+  // 页脚
+  text('数据导出于 ' + genAt + ' · 数据保存在本设备浏览器', W / 2, H - 28, { size: 22, color: '#9aa1ad', align: 'center' });
   const link = document.createElement('a');
-  link.download = dateOfTs(Date.now()) + randCode5() + '.png';
+  link.download = '记账统计-' + dateOfTs(Date.now()) + '-' + randCode5() + '.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
   toast('已导出统计图片');
@@ -2237,18 +3212,6 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r);
   ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r);
   ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
-}
-function sumBillsWeekly() {
-  const r = weekRange();
-  return sumBills(b => b.date >= r.start && b.date <= r.end);
-}
-function sumBillsMonthly() {
-  const t = dateOfTs(Date.now()).split('-'); const p = t[0]+'-'+t[1];
-  return sumBills(b => b.date.indexOf(p) === 0);
-}
-function sumBillsYearly() {
-  const y = dateOfTs(Date.now()).split('-')[0];
-  return sumBills(b => b.date.indexOf(y) === 0);
 }
 
 /* ====== 导入导出（JSON） ====== */
@@ -2328,7 +3291,7 @@ function importAccountJSON(event) {
           if (!b.id) b.id = acctGenId();
           if (!b.date) b.date = b.ts ? dateOfTs(b.ts) : dateOfTs(Date.now());
           if (b.settled === undefined) b.settled = false;
-          if (b.remark === undefined) b.remark = '';
+          if (!b.remark) b.remark = '';
           acct.bills.push(b); added++;
         }
       });
