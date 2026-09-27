@@ -356,6 +356,11 @@
   }
   .settings input:focus { outline: none; border-color: var(--primary); }
   .color-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; margin-right: 6px; vertical-align: middle; }
+  .settings .row.col { display: block; }
+  .settings .row.col .field-label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .settings .row.col input { width: 100%; text-align: left; box-sizing: border-box; }
+  .settings .row.col .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .settings .row.col #webdavStatus { margin-top: 8px; }
 
   /* 历史页 */
   .history-bar {
@@ -596,18 +601,20 @@
   .rpt-hero {
     position: relative; overflow: hidden;
     background: linear-gradient(135deg, #009a68, #00c389);
-    border-radius: 20px; padding: 24px 20px; color: #fff;
-    box-shadow: 0 8px 24px rgba(0,168,112,0.25);
+    border-radius: 18px; padding: 15px 16px 13px; color: #fff;
+    box-shadow: 0 6px 18px rgba(0,168,112,0.22);
   }
   .rpt-hero::before, .rpt-hero::after {
     content: ''; position: absolute; border-radius: 50%; background: rgba(255,255,255,0.10);
+    pointer-events: none;
   }
-  .rpt-hero::before { width: 220px; height: 220px; right: -70px; top: -90px; }
-  .rpt-hero::after { width: 150px; height: 150px; right: 60px; bottom: -80px; }
-  .rpt-hero h2 { font-size: 26px; font-weight: 800; letter-spacing: 1px; position: relative; z-index: 1; }
-  .rpt-sub { font-size: 14px; opacity: .92; margin-top: 6px; position: relative; z-index: 1; }
-  .rpt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; position: relative; z-index: 1; }
-  .rpt-chip { background: rgba(255,255,255,0.22); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; }
+  .rpt-hero::before { width: 150px; height: 150px; right: -50px; top: -62px; }
+  .rpt-hero::after { width: 100px; height: 100px; right: 46px; bottom: -56px; }
+  .rpt-hero h2 { font-size: 20px; font-weight: 800; letter-spacing: 1px; line-height: 1.2; position: relative; z-index: 1; }
+  .rpt-sub { font-size: 12px; opacity: .92; margin-top: 3px; position: relative; z-index: 1; }
+  .rpt-chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 10px; position: relative; z-index: 1; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .rpt-chips::-webkit-scrollbar { display: none; }
+  .rpt-chip { background: rgba(255,255,255,0.22); border-radius: 999px; padding: 5px 10px; font-size: 11px; white-space: nowrap; flex: none; }
   .rpt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
   .rpt-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(16,24,40,0.06); min-width: 0; }
   .rpt-card .k { font-size: 13px; color: #7a8190; }
@@ -922,6 +929,33 @@
             <div class="desc">含账单和模板，不可恢复</div>
           </div>
           <button class="btn danger" style="flex:none; padding:8px 14px;" onclick="clearAllAccount()">清空</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="row col">
+          <div>
+            <div class="name">WebDAV 备份</div>
+            <div class="desc">配置后可将故障记录与记账数据同步到私有云盘（Nextcloud / 群晖 / InfiniCLOUD 等）</div>
+          </div>
+        </div>
+        <div class="row col">
+          <label class="field-label">服务器地址</label>
+          <input type="text" id="setWebdavUrl" placeholder="https://dav.example.com/remote.php/dav/files/me/">
+        </div>
+        <div class="row col">
+          <label class="field-label">账号</label>
+          <input type="text" id="setWebdavUser" placeholder="WebDAV 用户名">
+        </div>
+        <div class="row col">
+          <label class="field-label">密码</label>
+          <input type="password" id="setWebdavPass" placeholder="应用密码 / 访问令牌">
+        </div>
+        <div class="row col">
+          <div class="btn-row">
+            <button class="btn primary" onclick="webdavSyncNow()">同步到 WebDAV</button>
+            <button class="btn" onclick="webdavRestoreNow()">从 WebDAV 恢复</button>
+          </div>
+          <div class="desc" id="webdavStatus">未同步</div>
         </div>
       </div>
       <div class="group">
@@ -1301,6 +1335,7 @@ let state = {
   },
   defaultReason: '卡了', // 默认故障原因（在弹窗中设置）
   btnReason: {},         // 各按钮单独覆盖的原因：{ A: '...', B: '...' }
+  webdav: { url: '', user: '', pass: '' }, // WebDAV 同步配置
   records: []
 };
 let currentFilter = 'ALL';
@@ -1343,6 +1378,9 @@ function load() {
       const fs = parseInt(state.nameFontSize, 10);
       state.nameFontSize = (isNaN(fs) || fs < 12 || fs > 40) ? 20 : fs;
       if (typeof state.namePrefix !== 'string') state.namePrefix = DEFAULT_PREFIX;
+      // WebDAV 配置兜底
+      if (!state.webdav || typeof state.webdav !== 'object') state.webdav = { url: '', user: '', pass: '' };
+      ['url', 'user', 'pass'].forEach(k => { if (typeof state.webdav[k] !== 'string') state.webdav[k] = ''; });
       // 模板：兼容旧的单份配置（tplRecord / tplCopy / timeFormat），迁移为 A/B 两份
       // 注意：必须用原始数据 d 判断，不能用合并后的 state（state 自带默认 tpl，会遮蔽旧配置）
       state.tpl = normalizeTpl(d.tpl, d.timeFormat, d.tplRecord, d.tplCopy);
@@ -1595,6 +1633,11 @@ function syncSettings() {
   if (dA) dA.textContent = tplOf('A').record || DEFAULT_TPL_RECORD;
   const dB = document.getElementById('setTplDescB');
   if (dB) dB.textContent = tplOf('B').record || DEFAULT_TPL_RECORD;
+  const w = state.webdav || { url: '', user: '', pass: '' };
+  const wu = document.getElementById('setWebdavUrl'); if (wu) wu.value = w.url || '';
+  const wuser = document.getElementById('setWebdavUser'); if (wuser) wuser.value = w.user || '';
+  const wp = document.getElementById('setWebdavPass'); if (wp) wp.value = w.pass || '';
+  const ws = document.getElementById('webdavStatus'); if (ws) ws.textContent = '未同步';
 }
 function saveSettings() {
   state.nameA = document.getElementById('setNameA').value.trim() || '按钮A';
@@ -1606,11 +1649,87 @@ function saveSettings() {
   }
   const pf = document.getElementById('setNamePrefix');
   if (pf) state.namePrefix = pf.value.trim();
+  const wu = document.getElementById('setWebdavUrl');
+  const wuser = document.getElementById('setWebdavUser');
+  const wp = document.getElementById('setWebdavPass');
+  state.webdav = {
+    url: wu ? wu.value.trim() : '',
+    user: wuser ? wuser.value.trim() : '',
+    pass: wp ? wp.value : ''
+  };
   save();
   renderHome();
   renderRecords();
   toast('设置已保存');
   goHome();
+}
+/* ====== WebDAV 同步 ====== */
+function webdavBase() {
+  let u = (state.webdav && state.webdav.url || '').trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  if (u[u.length - 1] !== '/') u += '/';
+  return u;
+}
+function webdavAuthHeader() {
+  const w = state.webdav || {};
+  if (!w.user) return {};
+  try {
+    return { 'Authorization': 'Basic ' + btoa(unescape(encodeURIComponent(w.user + ':' + (w.pass || '')))) };
+  } catch (e) { return {}; }
+}
+async function webdavPut(filename, obj) {
+  const base = webdavBase();
+  if (!base) throw new Error('未配置服务器地址');
+  const res = await fetch(base + filename, {
+    method: 'PUT',
+    headers: Object.assign({ 'Content-Type': 'application/json' }, webdavAuthHeader()),
+    body: JSON.stringify(obj)
+  });
+  if (!res.ok && res.status !== 201 && res.status !== 204) throw new Error('HTTP ' + res.status);
+  return res.status;
+}
+async function webdavGet(filename) {
+  const base = webdavBase();
+  if (!base) throw new Error('未配置服务器地址');
+  const res = await fetch(base + filename, { method: 'GET', headers: webdavAuthHeader() });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.text();
+}
+function setWebdavStatus(t) {
+  const el = document.getElementById('webdavStatus');
+  if (el) el.textContent = t;
+}
+async function webdavSyncNow() {
+  if (!webdavBase()) { toast('请先填写服务器地址'); return; }
+  setWebdavStatus('同步中…');
+  try {
+    await webdavPut('fault_recorder_v3.json', state);
+    await webdavPut('account_recorder_v1.json', acct);
+    setWebdavStatus('已同步 ' + new Date().toLocaleTimeString());
+    toast('已同步到 WebDAV');
+  } catch (e) {
+    setWebdavStatus('同步失败：' + e.message);
+    toast('同步失败：' + e.message);
+  }
+}
+async function webdavRestoreNow() {
+  if (!webdavBase()) { toast('请先填写服务器地址'); return; }
+  if (!confirm('从 WebDAV 下载将覆盖本机数据，确定继续？')) return;
+  setWebdavStatus('恢复中…');
+  try {
+    const f = await webdavGet('fault_recorder_v3.json');
+    const a = await webdavGet('account_recorder_v1.json');
+    if (f) { state = Object.assign({}, state, JSON.parse(f)); save(); }
+    if (a) { acct = JSON.parse(a); acctSave(); }
+    renderHome(); renderRecords(); renderStats();
+    setWebdavStatus('已恢复 ' + new Date().toLocaleTimeString());
+    toast('已从 WebDAV 恢复');
+  } catch (e) {
+    setWebdavStatus('恢复失败：' + e.message);
+    toast('恢复失败：' + e.message);
+  }
 }
 function renderButtonLabels() {
   ['A', 'B'].forEach(btn => {
@@ -3017,9 +3136,9 @@ function renderStats() {
   const box = document.getElementById('statsWrap');
   const chips = d.count === 0
     ? '<span class="rpt-chip">暂无账单数据</span>'
-    : '<span class="rpt-chip">' + d.first + ' — ' + d.last + '</span>' +
+    : '<span class="rpt-chip">' + d.first.replace(/-/g, '.') + ' - ' + d.last.replace(/-/g, '.') + '</span>' +
       '<span class="rpt-chip">' + d.count + ' 笔 · ' + fmtMoney(d.total) + '</span>' +
-      '<span class="rpt-chip">数据统计于 ' + statGenAt() + '</span>';
+      '<span class="rpt-chip">更新于 ' + statGenAt() + '</span>';
   let html = '<div class="rpt-hero"><h2>记账记录</h2>' +
     '<div class="rpt-sub">每日记账 · 数据保存在本设备</div>' +
     '<div class="rpt-chips">' + chips + '</div></div>';
