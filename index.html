@@ -85,16 +85,14 @@
     color: var(--text); user-select: none; min-width: 0;
     transition: border-color .15s, transform .1s;
   }
-  .rc-mid:active { transform: scale(0.99); border-color: var(--primary); }
-  .rc-mid.b:active { border-color: #ff7a59; }
+  .rc-mid:active { transform: scale(0.99); border-color: var(--bc, var(--primary)); }
   .rc-mid.running { border-color: var(--danger); animation: recPulse 1.1s ease-in-out infinite; }
   @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); } 50% { box-shadow: 0 0 0 3px rgba(255,80,80,0.22); } }
   .rc-mid-top { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .rc-name {
-    font-weight: 700; line-height: 1.2; color: var(--primary);
+    font-weight: 700; line-height: 1.2; color: var(--bc, var(--primary));
     max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .rc-mid.b .rc-name { color: #ff7a59; }
   .rc-hint { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
   /* 下部分：计时 div（始终占位，避免跳动） */
   .rc-timer {
@@ -123,8 +121,8 @@
     max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .rc-val.dim { color: var(--text-dim); }
-  .rc-reason { color: var(--primary); font-weight: 600; }
-  .rc-mid.b ~ .rc-bottom .rc-reason { color: #ff7a59; }
+  /* --bc 由卡片元素内联下发，实现每个记录按钮各自的配色 */
+  .rc-reason { color: var(--bc, var(--primary)); font-weight: 600; }
 
   /* ===== 底部弹出配置页（半屏高，从下向上） ===== */
   .sheet {
@@ -155,6 +153,8 @@
   .tpl-input:focus { outline: none; border-color: var(--primary); }
   .sheet-actions { display: flex; gap: 10px; padding-top: 12px; }
   .sheet-actions .btn { flex: 1; }
+  /* 模板配置需要更多编辑空间，高度提到屏幕 80% */
+  .sheet.tpl-sheet { height: 80vh; max-height: 80vh; }
   .cfg-sheet .options { max-height: 24vh; overflow-y: auto; }
   .cfg-sheet .field { margin-bottom: 12px; }
   .cfg-sheet .field label { margin-bottom: 5px; }
@@ -189,9 +189,10 @@
     margin: 18px 0 10px; display: flex; align-items: center; justify-content: space-between;
   }
   .records-wrap h2 .count { font-size: 12px; background: var(--card-2); padding: 2px 8px; border-radius: 10px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  /* 页签：列数由 JS 决定，按钮超过 2 个时自动排成两排 */
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
   .tab {
-    flex: 1; padding: 10px; text-align: center; cursor: pointer;
+    padding: 10px; text-align: center; cursor: pointer; min-width: 0;
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     font-size: 14px; color: var(--text-dim); transition: all .15s;
   }
@@ -227,7 +228,6 @@
     font-size: 11px; padding: 2px 8px; border-radius: 6px;
     background: rgba(79,140,255,0.15); color: var(--primary); white-space: nowrap;
   }
-  .record-item .tag.b { background: rgba(255,122,89,0.15); color: #ff7a59; }
   .record-item .del {
     background: transparent; border: none; color: var(--text-dim);
     cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1;
@@ -243,8 +243,10 @@
     flex: none; background: var(--card); border-top: 1px solid var(--border);
     padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
+  /* 复制按钮：一行两个，1 个时独占一行；3~4 个自动换行 */
   .bottom-actions {
-    max-width: 560px; margin: 0 auto; width: 100%; display: flex; gap: 10px;
+    max-width: 560px; margin: 0 auto; width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
   .btn {
     flex: 1; padding: 13px; border-radius: 12px; border: 1px solid var(--border);
@@ -350,17 +352,44 @@
   .settings .row:last-child { border-bottom: none; }
   .settings .row .name { font-size: 15px; }
   .settings .row .desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-  .settings input[type="text"] {
+  .settings input[type="text"], .settings input[type="number"] {
     background: var(--card-2); border: 1px solid var(--border); border-radius: 8px;
     color: var(--text); padding: 8px 12px; font-size: 14px; width: 160px; text-align: right;
   }
   .settings input:focus { outline: none; border-color: var(--primary); }
+  /* 自定义下拉：不用原生 select，样式与其它控件统一 */
+  .sel-wrap { position: relative; flex: none; }
+  .sel-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-width: 108px; padding: 9px 12px; border-radius: 10px;
+    background: var(--card-2); border: 1px solid var(--border); color: var(--text);
+    font-size: 14px; font-family: inherit; cursor: pointer; white-space: nowrap;
+    transition: border-color .15s, background .15s;
+  }
+  .sel-btn:active { background: var(--card); }
+  .sel-wrap.open .sel-btn { border-color: var(--primary); }
+  .sel-caret { font-size: 9px; color: var(--text-dim); transition: transform .18s ease; line-height: 1; }
+  .sel-wrap.open .sel-caret { transform: rotate(180deg); color: var(--primary); }
+  .sel-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 40;
+    min-width: 100%; padding: 5px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    display: none;
+  }
+  .sel-wrap.open .sel-menu { display: block; animation: selIn .14s ease; }
+  @keyframes selIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+  .sel-opt {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 10px; border-radius: 9px; font-size: 14px; color: var(--text);
+    cursor: pointer; white-space: nowrap; transition: background .12s;
+  }
+  .sel-opt:active { background: var(--card-2); }
+  .sel-opt.selected { background: rgba(79,140,255,0.14); color: var(--primary); font-weight: 600; }
+  .sel-opt .sel-dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border); flex: none; }
+  .sel-opt.selected .sel-dot { border-color: var(--primary); background: var(--primary); box-shadow: inset 0 0 0 2px var(--card); }
+  .sel-opt .sel-note { font-size: 11px; color: var(--text-dim); font-weight: 400; }
   .color-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; margin-right: 6px; vertical-align: middle; }
-  .settings .row.col { display: block; }
-  .settings .row.col .field-label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
-  .settings .row.col input { width: 100%; text-align: left; box-sizing: border-box; }
-  .settings .row.col .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .settings .row.col #webdavStatus { margin-top: 8px; }
 
   /* 历史页 */
   .history-bar {
@@ -479,7 +508,6 @@
     font-size: 10px; padding: 1px 6px; border-radius: 4px; white-space: nowrap;
     background: rgba(79,140,255,0.15); color: var(--primary);
   }
-  .history .h-item .h-tag.b { background: rgba(255,122,89,0.15); color: #ff7a59; }
   .history .h-item .h-copy {
     background: transparent; border: none; color: var(--text-dim);
     cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1;
@@ -751,73 +779,19 @@
     </div>
   </div>
   <div class="scroll" id="homeScroll">
-    <div class="main">
-      <!-- A 卡片：上(左/中/右) + 中 + 下(左/中/右) -->
-      <div class="rec-card">
-        <div class="rc-top">
-          <div class="rc-left"></div>
-          <div class="rc-date" id="rcDateA">—</div>
-          <div class="rc-right">
-            <span class="rc-total" id="rcTotalA">今日 0:00</span>
-          </div>
-        </div>
-        <button class="rc-mid" id="btnA" onclick="toggleRecord('A')">
-          <span class="rc-mid-top">
-            <span class="rc-name" id="btnA-name">按钮 A</span>
-            <span class="rc-hint" id="btnA-sub">点击开始记录</span>
-          </span>
-          <span class="rc-timer" id="timerA">
-            <span class="t-dot" id="timerA-dot"></span><span class="t-val" id="timerA-val">00:00</span>
-          </span>
-        </button>
-        <div class="rc-bottom" onclick="openBottomCfg('A')">
-          <div class="rc-cell"><span class="rc-val dim" id="rcAdvanceA">30秒</span></div>
-          <div class="rc-cell"><span class="rc-val rc-reason" id="btnA-reason">卡了</span></div>
-          <div class="rc-cell"><span class="rc-val dim" id="rcDelayA">30秒</span></div>
-        </div>
-      </div>
-
-      <!-- B 卡片 -->
-      <div class="rec-card">
-        <div class="rc-top">
-          <div class="rc-left"></div>
-          <div class="rc-date" id="rcDateB">—</div>
-          <div class="rc-right">
-            <span class="rc-total" id="rcTotalB">今日 0:00</span>
-          </div>
-        </div>
-        <button class="rc-mid b" id="btnB" onclick="toggleRecord('B')">
-          <span class="rc-mid-top">
-            <span class="rc-name" id="btnB-name">按钮 B</span>
-            <span class="rc-hint" id="btnB-sub">点击开始记录</span>
-          </span>
-          <span class="rc-timer" id="timerB">
-            <span class="t-dot" id="timerB-dot"></span><span class="t-val" id="timerB-val">00:00</span>
-          </span>
-        </button>
-        <div class="rc-bottom" onclick="openBottomCfg('B')">
-          <div class="rc-cell"><span class="rc-val dim" id="rcAdvanceB">30秒</span></div>
-          <div class="rc-cell"><span class="rc-val rc-reason" id="btnB-reason">卡了</span></div>
-          <div class="rc-cell"><span class="rc-val dim" id="rcDelayB">30秒</span></div>
-        </div>
-      </div>
-    </div>
+    <!-- 记录卡片由 JS 按按钮数量动态生成：一行两个，从左到右、从上到下 -->
+    <div class="main" id="btnCards"></div>
 
     <div class="records-wrap">
       <h2>历史记录 <span class="count" id="recCount">0</span></h2>
-      <div class="tabs">
-        <div class="tab active" data-filter="ALL" onclick="switchTab('ALL')">全部</div>
-        <div class="tab" id="tabA" data-filter="A" onclick="switchTab('A')">A 记录</div>
-        <div class="tab" id="tabB" data-filter="B" onclick="switchTab('B')">B 记录</div>
-      </div>
+      <!-- 页签由 JS 按按钮数量动态生成 -->
+      <div class="tabs" id="recTabs"></div>
       <div class="record-list" id="recordList"></div>
     </div>
   </div>
   <div class="bottom-bar">
-    <div class="bottom-actions">
-      <button class="btn" id="copyBtnA" onclick="copyByButton('A')">📋 复制 A</button>
-      <button class="btn" id="copyBtnB" onclick="copyByButton('B')">📋 复制 B</button>
-    </div>
+    <!-- 底部复制按钮由 JS 按按钮数量动态生成 -->
+    <div class="bottom-actions" id="copyBtns"></div>
   </div>
 </div>
 
@@ -833,24 +807,29 @@
       <div class="group">
         <div class="row">
           <div>
-            <div class="name"><span class="color-dot" style="background:#4f8cff"></span>按钮 A 名字</div>
-            <div class="desc">记录前缀，例如「布拉格のAAA」</div>
+            <div class="name">记录按钮数量</div>
+            <div class="desc">最多 4 个，默认 2 个；一行两个，从左到右、从上到下排列</div>
           </div>
-          <input type="text" id="setNameA" placeholder="输入名字">
-        </div>
-        <div class="row">
-          <div>
-            <div class="name"><span class="color-dot" style="background:#ff7a59"></span>按钮 B 名字</div>
-            <div class="desc">记录前缀，例如「布拉格のBBB」</div>
+          <div class="sel-wrap" id="setBtnCountWrap">
+            <button type="button" class="sel-btn" id="setBtnCountBtn" onclick="toggleBtnCountMenu(event)">
+              <span id="setBtnCountLabel">2 个</span><span class="sel-caret">▼</span>
+            </button>
+            <div class="sel-menu" id="setBtnCountMenu">
+              <div class="sel-opt" data-value="1" onclick="pickBtnCount(1)"><span>1 个</span><span class="sel-dot"></span></div>
+              <div class="sel-opt" data-value="2" onclick="pickBtnCount(2)"><span>2 个</span><span class="sel-dot"></span></div>
+              <div class="sel-opt" data-value="3" onclick="pickBtnCount(3)"><span>3 个</span><span class="sel-dot"></span></div>
+              <div class="sel-opt" data-value="4" onclick="pickBtnCount(4)"><span>4 个</span><span class="sel-dot"></span></div>
+            </div>
           </div>
-          <input type="text" id="setNameB" placeholder="输入名字">
         </div>
+        <!-- 每个记录按钮的名字，由 JS 按按钮数量动态生成 -->
+        <div id="setNameRows"></div>
         <div class="row">
           <div>
             <div class="name">账号字号</div>
             <div class="desc">主页中间账户名称的字号（如「布拉格のAAA」），保证一行显示完整</div>
           </div>
-          <input type="number" id="setFontSize" min="12" max="40" placeholder="20">
+          <input type="number" id="setFontSize" min="12" max="40" placeholder="20" inputmode="numeric">
         </div>
       </div>
       <div class="group">
@@ -861,20 +840,8 @@
           </div>
           <input type="text" id="setNamePrefix" placeholder="布拉格の">
         </div>
-        <div class="row">
-          <div>
-            <div class="name">A 账号模板</div>
-            <div class="desc" id="setTplDescA">［记录项］［复制项］［设置项］控制显示与复制内容</div>
-          </div>
-          <button class="btn" style="flex:none; padding:8px 14px;" onclick="openTplModal('A')">配置</button>
-        </div>
-        <div class="row">
-          <div>
-            <div class="name">B 账号模板</div>
-            <div class="desc" id="setTplDescB">两个账号的模板相互独立，互不影响</div>
-          </div>
-          <button class="btn" style="flex:none; padding:8px 14px;" onclick="openTplModal('B')">配置</button>
-        </div>
+        <!-- 每个记录按钮各自的模板，由 JS 按按钮数量动态生成 -->
+        <div id="setTplRows"></div>
         <div class="row">
           <div>
             <div class="name">模板配置说明</div>
@@ -932,33 +899,6 @@
         </div>
       </div>
       <div class="group">
-        <div class="row col">
-          <div>
-            <div class="name">WebDAV 备份</div>
-            <div class="desc">配置后可将故障记录与记账数据同步到私有云盘（Nextcloud / 群晖 / InfiniCLOUD 等）</div>
-          </div>
-        </div>
-        <div class="row col">
-          <label class="field-label">服务器地址</label>
-          <input type="text" id="setWebdavUrl" placeholder="https://dav.example.com/remote.php/dav/files/me/">
-        </div>
-        <div class="row col">
-          <label class="field-label">账号</label>
-          <input type="text" id="setWebdavUser" placeholder="WebDAV 用户名">
-        </div>
-        <div class="row col">
-          <label class="field-label">密码</label>
-          <input type="password" id="setWebdavPass" placeholder="应用密码 / 访问令牌">
-        </div>
-        <div class="row col">
-          <div class="btn-row">
-            <button class="btn primary" onclick="webdavSyncNow()">同步到 WebDAV</button>
-            <button class="btn" onclick="webdavRestoreNow()">从 WebDAV 恢复</button>
-          </div>
-          <div class="desc" id="webdavStatus">未同步</div>
-        </div>
-      </div>
-      <div class="group">
         <div class="row">
           <div>
             <div class="name">关于</div>
@@ -1013,7 +953,7 @@
     </div>
     <div class="tpl-hint">
       TOML 配置：<b>[record]</b> 列表显示 · <b>[copy]</b> 复制内容 · <b>[settings]</b> 时间格式<br>
-      可用变量：#开始时间 #结束时间 #账号全称 #账号简称 #日期 #故障原因
+      可用变量：#开始时间 #结束时间 #账号全称 #账号简称 #日期 #故障原因 #时间格式（变量后加 /n 只替换一次）
     </div>
     <textarea id="tplInput" class="tpl-input" spellcheck="false"></textarea>
     <div class="sheet-actions">
@@ -1045,12 +985,18 @@
       <code>#账号全称</code> 如「布拉格のAAA」<br>
       <code>#账号简称</code> 全称去掉「账号前缀」后的部分<br>
       <code>#日期</code> 记录所属日期，如 2026-09-28<br>
-      <code>#故障原因</code> 当前选择的故障原因
-      <h4>四、时间格式</h4>
+      <code>#故障原因</code> 当前选择的故障原因<br>
+      <code>#时间格式</code> 该账号的时间格式文本，如 hh:mm:ss
+      <h4>四、非重复修饰符 /n</h4>
+      在变量后紧跟 <code>/n</code>，该变量在一次复制／导出里<strong>只替换第一次</strong>，之后再出现就整段不显示：
+      <span class="mono">template = "#账号全称/n #开始时间 到 #结束时间 #故障原因"</span>
+      导出多行时只有第一行带名字，其余行自动省略名字与多余空格。
+      三条：<code>/</code> 是正斜杠（不能写成 <code>\n</code>）；不加修饰符的变量每条记录都会按模板正常渲染；该效果只对「复制／导出」生效，主页与历史页面始终完整显示。
+      <h4>五、时间格式</h4>
       支持 yyyy 年、mm 月（首次出现）／分（之后出现）、dd 日、hh 时、ss 秒：
       <span class="mono">time_format = "hh:mm:ss"</span>
       <span class="mono">time_format = "yyyy-mm-dd hh:mm:ss"</span>
-      <h4>五、完整示例</h4>
+      <h4>六、完整示例</h4>
       <span class="mono"># 记录项：主页列表与历史页的显示格式
 [record]
 template = "#账号简称 #开始时间 到 #结束时间 #故障原因"
@@ -1062,9 +1008,9 @@ template = "#账号全称 #日期 #开始时间 到 #结束时间 （#故障原�
 # 设置项：时间显示格式
 [settings]
 time_format = "hh:mm:ss"</span>
-      <h4>六、注意</h4>
+      <h4>七、注意</h4>
       模板含 <code>#</code> 变量，因此值必须用引号包裹，否则会被当作注释截断；
-      以 <code>#</code> 开头的行为注释。两个账号的模板相互独立，需分别配置；留空则回落到默认模板。
+      以 <code>#</code> 开头的行为注释。每个按钮的模板相互独立，需分别配置；留空则回落到默认模板。
     </div>
     <div class="sheet-actions">
       <button class="btn primary" onclick="closeTplHelp()">知道了</button>
@@ -1291,6 +1237,128 @@ const DEFAULT_TIME_FMT = 'hh:mm:ss';                                // 时间显
 const DEFAULT_TPL_RECORD = '#账号简称 #开始时间 到 #结束时间 #故障原因'; // 记录项模板
 const DEFAULT_TPL_COPY   = '#账号全称 #开始时间 到 #结束时间 #故障原因'; // 复制项模板
 
+/* ====== 记录按钮：最多 4 个（A/B/C/D），默认 2 个 ====== */
+const BTN_KEYS = ['A', 'B', 'C', 'D'];
+const BTN_COLORS = { A: '#4f8cff', B: '#ff7a59', C: '#22c55e', D: '#a855f7' };
+const BTN_COLORS_BG = { A: 'rgba(79,140,255,.15)', B: 'rgba(255,122,89,.15)', C: 'rgba(34,197,94,.15)', D: 'rgba(168,85,247,.15)' };
+const BTN_DEFAULT_NAME = { A: '布拉格のAAA', B: '布拉格のBBB', C: '布拉格のCCC', D: '布拉格のDDD' };
+const BTN_DEFAULT_ADVANCE = 30, BTN_DEFAULT_DELAY = 30;
+function btnColor(b) { return BTN_COLORS[b] || BTN_COLORS.A; }
+function btnColorBg(b) { return BTN_COLORS_BG[b] || BTN_COLORS_BG.A; }
+function btnCount() {
+  const n = parseInt(state.btnCount, 10);
+  return (n >= 1 && n <= 4) ? n : 2;
+}
+function activeBtns() { return BTN_KEYS.slice(0, btnCount()); }
+function cfgOf(b) {
+  if (!state.btnCfg || typeof state.btnCfg !== 'object') state.btnCfg = {};
+  if (!state.btnCfg[b] || typeof state.btnCfg[b] !== 'object') {
+    state.btnCfg[b] = { name: BTN_DEFAULT_NAME[b] || ('按钮' + b), advance: 30, delay: 30 };
+  }
+  return state.btnCfg[b];
+}
+function btnName(b) { const n = cfgOf(b).name; return (typeof n === 'string' && n) ? n : (BTN_DEFAULT_NAME[b] || ('按钮' + b)); }
+function btnNum(v, fb) { const n = Number(v); return (typeof v === 'number' && isFinite(n) && n >= 0) ? n : fb; }
+function btnAdvance(b) { return btnNum(cfgOf(b).advance, BTN_DEFAULT_ADVANCE); }
+function btnDelay(b) { return btnNum(cfgOf(b).delay, BTN_DEFAULT_DELAY); }
+/* 列表 / 历史里的按钮标签，按各自配色渲染（内联下发，避免写死 A/B） */
+function btnTagHtml(b) {
+  const k = BTN_KEYS.indexOf(b) >= 0 ? b : 'A';
+  return '<span class="tag" style="background:' + btnColorBg(k) + ';color:' + btnColor(k) + '">' + k + '</span>';
+}
+function btnHTagHtml(b) {
+  const k = BTN_KEYS.indexOf(b) >= 0 ? b : 'A';
+  return '<span class="h-tag" style="background:' + btnColorBg(k) + ';color:' + btnColor(k) + '">' + k + '</span>';
+}
+/* 统一设置某个按钮的数量，并同步重建所有随数量变化的 DOM */
+function applyBtnCount(n) {
+  const num = parseInt(n, 10);
+  const cnt = (num >= 1 && num <= 4) ? num : 2;
+  const keep = BTN_KEYS.slice(0, cnt);
+  // 数量减少时，被隐藏按钮若正在计时先落库，避免数据丢失
+  BTN_KEYS.forEach(k => { if (keep.indexOf(k) < 0 && recState[k]) stopRecord(k); });
+  state.btnCount = cnt;
+  save();
+  renderButtonUI();
+  renderSettingsRows();
+  if (currentFilter !== 'ALL' && activeBtns().indexOf(currentFilter) < 0) currentFilter = 'ALL';
+  renderHome();
+  renderRecords();
+}
+/* 主页随按钮数量变化的三处 DOM：卡片 / 页签 / 底部复制按钮 */
+function renderButtonUI() {
+  const btns = activeBtns();
+  const cards = document.getElementById('btnCards');
+  if (cards) cards.innerHTML = btns.map(buildCardHtml).join('');
+  const tabs = document.getElementById('recTabs');
+  if (tabs) {
+    // 页签数 = 全部 + 按钮数；超过 3 个（即按钮超过 2 个）时分两排，尽量均分
+    const total = btns.length + 1;
+    const cols = total > 3 ? Math.ceil(total / 2) : total;
+    tabs.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+    tabs.innerHTML = '<div class="tab' + (currentFilter === 'ALL' ? ' active' : '') + '" data-filter="ALL" onclick="switchTab(\'ALL\')">全部</div>' +
+      btns.map(b => '<div class="tab' + (currentFilter === b ? ' active' : '') + '" data-filter="' + b + '" id="tab' + b + '" onclick="switchTab(\'' + b + '\')">' + shortName(btnName(b)) + '</div>').join('');
+  }
+  const copies = document.getElementById('copyBtns');
+  if (copies) {
+    copies.style.gridTemplateColumns = (btns.length === 1) ? '1fr' : '1fr 1fr';
+    copies.innerHTML = btns.map(b => '<button class="btn" id="copyBtn' + b + '" onclick="copyByButton(\'' + b + '\')">📋 复制 ' + shortName(btnName(b)) + '</button>').join('');
+  }
+}
+function buildCardHtml(b) {
+  const c = btnColor(b);
+  return '' +
+    '<div class="rec-card" style="--bc:' + c + '">' +
+      '<div class="rc-top">' +
+        '<div class="rc-left"></div>' +
+        '<div class="rc-date" id="rcDate' + b + '">—</div>' +
+        '<div class="rc-right">' +
+          '<span class="rc-total" id="rcTotal' + b + '">今日 0:00</span>' +
+        '</div>' +
+      '</div>' +
+      '<button class="rc-mid" id="btn' + b + '" onclick="toggleRecord(\'' + b + '\')">' +
+        '<span class="rc-mid-top">' +
+          '<span class="rc-name" id="btn' + b + '-name"></span>' +
+          '<span class="rc-hint" id="btn' + b + '-sub">点击开始记录</span>' +
+        '</span>' +
+        '<span class="rc-timer" id="timer' + b + '">' +
+          '<span class="t-dot" id="timer' + b + '-dot"></span><span class="t-val" id="timer' + b + '-val">00:00</span>' +
+        '</span>' +
+      '</button>' +
+      '<div class="rc-bottom" onclick="openBottomCfg(\'' + b + '\')">' +
+        '<div class="rc-cell"><span class="rc-val dim" id="rcAdvance' + b + '"></span></div>' +
+        '<div class="rc-cell"><span class="rc-val rc-reason" id="btn' + b + '-reason"></span></div>' +
+        '<div class="rc-cell"><span class="rc-val dim" id="rcDelay' + b + '"></span></div>' +
+      '</div>' +
+    '</div>';
+}
+/* 设置页随按钮数量变化的两处 DOM：名字行 / 模板行 */
+function renderSettingsRows() {
+  const btns = activeBtns();
+  const nm = document.getElementById('setNameRows');
+  if (nm) {
+    nm.innerHTML = btns.map(b =>
+      '<div class="row">' +
+        '<div>' +
+          '<div class="name"><span class="color-dot" style="background:' + btnColor(b) + '"></span>按钮 ' + b + ' 名字</div>' +
+          '<div class="desc">' + escapeHtml(btnName(b)) + '｜也可在模板里用 #账号全称 引用</div>' +
+        '</div>' +
+        '<input type="text" id="setName' + b + '" placeholder="输入名字">' +
+      '</div>').join('');
+  }
+  const tp = document.getElementById('setTplRows');
+  if (tp) {
+    tp.innerHTML = btns.map(b =>
+      '<div class="row">' +
+        '<div>' +
+          '<div class="name"><span class="color-dot" style="background:' + btnColor(b) + '"></span>' + escapeHtml(shortName(btnName(b))) + ' 模板</div>' +
+          '<div class="desc" id="setTplDesc' + b + '"></div>' +
+        '</div>' +
+        '<button class="btn" style="flex:none; padding:8px 14px;" onclick="openTplModal(\'' + b + '\')">配置</button>' +
+      '</div>').join('');
+  }
+}
+
 /* ====== 模板按账号分开：{ record, copy, timeFormat } × {A, B} ====== */
 function defaultTplSet() {
   return { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT };
@@ -1301,8 +1369,8 @@ function normalizeTpl(t, legacyFmt, legacyRec, legacyCopy) {
   if (typeof legacyRec === 'string' && legacyRec) base.record = legacyRec;
   if (typeof legacyCopy === 'string' && legacyCopy) base.copy = legacyCopy;
   if (typeof legacyFmt === 'string' && legacyFmt) base.timeFormat = legacyFmt;
-  const out = { A: {}, B: {} };
-  ['A', 'B'].forEach(k => {
+  const out = {};
+  BTN_KEYS.forEach(k => {
     const s = (t && typeof t === 'object' && t[k]) ? t[k] : {};
     out[k] = {
       record: (typeof s.record === 'string' && s.record) ? s.record : base.record,
@@ -1313,29 +1381,35 @@ function normalizeTpl(t, legacyFmt, legacyRec, legacyCopy) {
   return out;
 }
 function tplOf(btn) {
-  const k = (btn === 'B') ? 'B' : 'A';
-  if (!state.tpl || !state.tpl[k]) state.tpl = normalizeTpl(state.tpl);
+  const k = BTN_KEYS.indexOf(btn) >= 0 ? btn : 'A';
+  if (!state.tpl || typeof state.tpl !== 'object') state.tpl = normalizeTpl(state.tpl);
+  if (!state.tpl[k] || typeof state.tpl[k] !== 'object') state.tpl[k] = defaultTplSet();
   return state.tpl[k];
 }
 
 let state = {
-  nameA: '布拉格のAAA',
-  nameB: '布拉格のBBB',
   customReasons: [],
   customDurations: [],
   durUnit: 'sec',        // 'sec' 表示 customDurations 与 rec.dur 的单位是秒
-  offsetA: 30,           // 开始时间提前秒数（时间差 A / 提前）
-  offsetB: 30,           // 结束时间延迟秒数（时间差 B / 延后）
   nameFontSize: 20,           // 主页中间账户名称字号
   namePrefix: DEFAULT_PREFIX, // 账号前缀（#账号简称 = 全称去掉该前缀）
-  // 两个账号的模板分开配置 { A:{record,copy,timeFormat}, B:{...} }
+  btnCount: 2,                // 记录按钮数量 1~4，默认 2
+  // 每个按钮独立配置：名字 / 提前秒数 / 延迟秒数（始终保留 4 个键，减少数量不删配置）
+  btnCfg: {
+    A: { name: '布拉格のAAA', advance: 30, delay: 30 },
+    B: { name: '布拉格のBBB', advance: 30, delay: 30 },
+    C: { name: '布拉格のCCC', advance: 30, delay: 30 },
+    D: { name: '布拉格のDDD', advance: 30, delay: 30 }
+  },
+  // 四个账号的模板分开配置 { A:{record,copy,timeFormat}, B:..., C:..., D:... }
   tpl: {
     A: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT },
-    B: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT }
+    B: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT },
+    C: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT },
+    D: { record: DEFAULT_TPL_RECORD, copy: DEFAULT_TPL_COPY, timeFormat: DEFAULT_TIME_FMT }
   },
   defaultReason: '卡了', // 默认故障原因（在弹窗中设置）
   btnReason: {},         // 各按钮单独覆盖的原因：{ A: '...', B: '...' }
-  webdav: { url: '', user: '', pass: '' }, // WebDAV 同步配置
   records: []
 };
 let currentFilter = 'ALL';
@@ -1347,6 +1421,27 @@ let historyNameSel = '';   // 历史页名字筛选当前值
 let historyDateSel = '';   // 历史页日期筛选当前值 '' | 'YYYY-MM' | 'YYYY-MM-DD'
 let dpViewYear = 0;        // 日历面板当前显示的年
 let dpViewMonth = 0;       // 日历面板当前显示的月 0-11
+
+/* 按钮配置迁移：旧数据只有 nameA/nameB + 全局 offsetA(提前)/offsetB(延后)，
+   迁移为每个按钮各自的 name/advance/delay；始终产出完整 4 个键（减少数量不丢配置）。 */
+function migrateBtnCfg(d) {
+  const src = (d && d.btnCfg && typeof d.btnCfg === 'object') ? d.btnCfg : {};
+  const legacyName = (d && typeof d === 'object') ? { A: d.nameA, B: d.nameB } : {};
+  const adv = (d && typeof d.offsetA === 'number' && d.offsetA >= 0) ? d.offsetA : 30;
+  const dly = (d && typeof d.offsetB === 'number' && d.offsetB >= 0) ? d.offsetB : 30;
+  const out = {};
+  BTN_KEYS.forEach(k => {
+    const s = (src[k] && typeof src[k] === 'object') ? src[k] : {};
+    const nmByCfg = (typeof s.name === 'string' && s.name.trim()) ? s.name : '';
+    const nmLegacy = (typeof legacyName[k] === 'string' && legacyName[k].trim()) ? legacyName[k] : '';
+    out[k] = {
+      name: nmByCfg || nmLegacy || BTN_DEFAULT_NAME[k],
+      advance: btnNum(s.advance, adv),
+      delay: btnNum(s.delay, dly)
+    };
+  });
+  return out;
+}
 
 function load() {
   try {
@@ -1371,16 +1466,14 @@ function load() {
       state = Object.assign({}, state, d);
       if (!Array.isArray(state.customReasons)) state.customReasons = [];
       if (!Array.isArray(state.customDurations)) state.customDurations = [];
-      // 新增字段兜底
-      if (typeof state.offsetA !== 'number' || state.offsetA < 0) state.offsetA = 30;
-      if (typeof state.offsetB !== 'number' || state.offsetB < 0) state.offsetB = 30;
+      // 记录按钮：把旧的 nameA/nameB + 全局 offsetA(提前)/offsetB(延后) 迁移为每个按钮独立的配置
+      state.btnCfg = migrateBtnCfg(d);
+      const bcn = parseInt(d && d.btnCount, 10);
+      state.btnCount = (bcn >= 1 && bcn <= 4) ? bcn : 2;
       if (!state.defaultReason) state.defaultReason = '卡了';
       const fs = parseInt(state.nameFontSize, 10);
       state.nameFontSize = (isNaN(fs) || fs < 12 || fs > 40) ? 20 : fs;
       if (typeof state.namePrefix !== 'string') state.namePrefix = DEFAULT_PREFIX;
-      // WebDAV 配置兜底
-      if (!state.webdav || typeof state.webdav !== 'object') state.webdav = { url: '', user: '', pass: '' };
-      ['url', 'user', 'pass'].forEach(k => { if (typeof state.webdav[k] !== 'string') state.webdav[k] = ''; });
       // 模板：兼容旧的单份配置（tplRecord / tplCopy / timeFormat），迁移为 A/B 两份
       // 注意：必须用原始数据 d 判断，不能用合并后的 state（state 自带默认 tpl，会遮蔽旧配置）
       state.tpl = normalizeTpl(d.tpl, d.timeFormat, d.tplRecord, d.tplCopy);
@@ -1623,25 +1716,23 @@ function updateDpLabel() {
 }
 
 function syncSettings() {
-  document.getElementById('setNameA').value = state.nameA;
-  document.getElementById('setNameB').value = state.nameB;
+  // 名字行与模板行随按钮数量动态生成，先重建再回填，避免残留上一次数量的行
+  renderSettingsRows();
+  closeBtnCountMenu();
+  syncBtnCountUI();
+  activeBtns().forEach(b => {
+    const el = document.getElementById('setName' + b);
+    if (el) el.value = btnName(b);
+    const d = document.getElementById('setTplDesc' + b);
+    if (d) d.textContent = tplOf(b).record || DEFAULT_TPL_RECORD;
+  });
   const fsEl = document.getElementById('setFontSize');
   if (fsEl) fsEl.value = state.nameFontSize || 20;
   const pf = document.getElementById('setNamePrefix');
   if (pf) pf.value = state.namePrefix || DEFAULT_PREFIX;
-  const dA = document.getElementById('setTplDescA');
-  if (dA) dA.textContent = tplOf('A').record || DEFAULT_TPL_RECORD;
-  const dB = document.getElementById('setTplDescB');
-  if (dB) dB.textContent = tplOf('B').record || DEFAULT_TPL_RECORD;
-  const w = state.webdav || { url: '', user: '', pass: '' };
-  const wu = document.getElementById('setWebdavUrl'); if (wu) wu.value = w.url || '';
-  const wuser = document.getElementById('setWebdavUser'); if (wuser) wuser.value = w.user || '';
-  const wp = document.getElementById('setWebdavPass'); if (wp) wp.value = w.pass || '';
-  const ws = document.getElementById('webdavStatus'); if (ws) ws.textContent = '未同步';
 }
 function saveSettings() {
-  state.nameA = document.getElementById('setNameA').value.trim() || '按钮A';
-  state.nameB = document.getElementById('setNameB').value.trim() || '按钮B';
+  saveNameInputs();
   const fsEl = document.getElementById('setFontSize');
   if (fsEl) {
     const fs = parseInt(fsEl.value, 10);
@@ -1649,100 +1740,68 @@ function saveSettings() {
   }
   const pf = document.getElementById('setNamePrefix');
   if (pf) state.namePrefix = pf.value.trim();
-  const wu = document.getElementById('setWebdavUrl');
-  const wuser = document.getElementById('setWebdavUser');
-  const wp = document.getElementById('setWebdavPass');
-  state.webdav = {
-    url: wu ? wu.value.trim() : '',
-    user: wuser ? wuser.value.trim() : '',
-    pass: wp ? wp.value : ''
-  };
   save();
+  renderButtonUI();
   renderHome();
   renderRecords();
   toast('设置已保存');
   goHome();
 }
-/* ====== WebDAV 同步 ====== */
-function webdavBase() {
-  let u = (state.webdav && state.webdav.url || '').trim();
-  if (!u) return '';
-  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-  if (u[u.length - 1] !== '/') u += '/';
-  return u;
-}
-function webdavAuthHeader() {
-  const w = state.webdav || {};
-  if (!w.user) return {};
-  try {
-    return { 'Authorization': 'Basic ' + btoa(unescape(encodeURIComponent(w.user + ':' + (w.pass || '')))) };
-  } catch (e) { return {}; }
-}
-async function webdavPut(filename, obj) {
-  const base = webdavBase();
-  if (!base) throw new Error('未配置服务器地址');
-  const res = await fetch(base + filename, {
-    method: 'PUT',
-    headers: Object.assign({ 'Content-Type': 'application/json' }, webdavAuthHeader()),
-    body: JSON.stringify(obj)
+/* 把设置页里当前可见的名字输入框写回 state（切换数量前必须先保存） */
+function saveNameInputs() {
+  activeBtns().forEach(b => {
+    const el = document.getElementById('setName' + b);
+    if (!el) return;
+    const v = el.value.trim();
+    cfgOf(b).name = v || (BTN_DEFAULT_NAME[b] || ('按钮' + b));
   });
-  if (!res.ok && res.status !== 201 && res.status !== 204) throw new Error('HTTP ' + res.status);
-  return res.status;
 }
-async function webdavGet(filename) {
-  const base = webdavBase();
-  if (!base) throw new Error('未配置服务器地址');
-  const res = await fetch(base + filename, { method: 'GET', headers: webdavAuthHeader() });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return await res.text();
+/* ====== 自定义下拉：记录按钮数量 ====== */
+function btnCountWrap() { return document.getElementById('setBtnCountWrap'); }
+function toggleBtnCountMenu(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const wrap = btnCountWrap();
+  if (!wrap) return;
+  const willOpen = !wrap.classList.contains('open');
+  closeBtnCountMenu();
+  if (willOpen) wrap.classList.add('open');
 }
-function setWebdavStatus(t) {
-  const el = document.getElementById('webdavStatus');
-  if (el) el.textContent = t;
+function closeBtnCountMenu() {
+  const wrap = btnCountWrap();
+  if (wrap) wrap.classList.remove('open');
 }
-async function webdavSyncNow() {
-  if (!webdavBase()) { toast('请先填写服务器地址'); return; }
-  setWebdavStatus('同步中…');
-  try {
-    await webdavPut('fault_recorder_v3.json', state);
-    await webdavPut('account_recorder_v1.json', acct);
-    setWebdavStatus('已同步 ' + new Date().toLocaleTimeString());
-    toast('已同步到 WebDAV');
-  } catch (e) {
-    setWebdavStatus('同步失败：' + e.message);
-    toast('同步失败：' + e.message);
-  }
+function pickBtnCount(n) {
+  const num = parseInt(n, 10);
+  if (!(num >= 1 && num <= 4)) return;
+  closeBtnCountMenu();
+  if (num === btnCount()) { syncBtnCountUI(); return; }
+  saveNameInputs();
+  applyBtnCount(num);
+  syncBtnCountUI();
+  syncSettings();
+  toast('已切换为 ' + btnCount() + ' 个记录按钮');
 }
-async function webdavRestoreNow() {
-  if (!webdavBase()) { toast('请先填写服务器地址'); return; }
-  if (!confirm('从 WebDAV 下载将覆盖本机数据，确定继续？')) return;
-  setWebdavStatus('恢复中…');
-  try {
-    const f = await webdavGet('fault_recorder_v3.json');
-    const a = await webdavGet('account_recorder_v1.json');
-    if (f) { state = Object.assign({}, state, JSON.parse(f)); save(); }
-    if (a) { acct = JSON.parse(a); acctSave(); }
-    renderHome(); renderRecords(); renderStats();
-    setWebdavStatus('已恢复 ' + new Date().toLocaleTimeString());
-    toast('已从 WebDAV 恢复');
-  } catch (e) {
-    setWebdavStatus('恢复失败：' + e.message);
-    toast('恢复失败：' + e.message);
-  }
+function syncBtnCountUI() {
+  const wrap = btnCountWrap();
+  const lab = document.getElementById('setBtnCountLabel');
+  if (lab) lab.textContent = btnCount() + ' 个';
+  if (!wrap) return;
+  wrap.querySelectorAll('.sel-opt').forEach(o => {
+    o.classList.toggle('selected', parseInt(o.dataset.value, 10) === btnCount());
+  });
 }
 function renderButtonLabels() {
-  ['A', 'B'].forEach(btn => {
+  activeBtns().forEach(btn => {
     const el = document.getElementById('btn' + btn + '-name');
     if (!el) return;
-    el.textContent = btn === 'A' ? state.nameA : state.nameB;
+    el.textContent = btnName(btn);
     el.style.fontSize = (state.nameFontSize || 20) + 'px';
   });
 }
 
 /* ====== 实时计时记录 ====== */
 // 每个按钮独立的计时状态：null 表示空闲；运行期为 { startTs, timerId }
-let recState = { A: null, B: null };
+let recState = { A: null, B: null, C: null, D: null };
 
 function getBtnReason(btn) {
   return (state.btnReason && state.btnReason[btn]) || state.defaultReason;
@@ -1769,12 +1828,12 @@ function stopRecord(btn) {
   const stopTs = Date.now();
   recState[btn] = null;
 
-  const A = Math.max(0, Number(state.offsetA) || 0);  // 开始提前 A 秒
-  const B = Math.max(0, Number(state.offsetB) || 0);  // 结束延迟 B 秒
+  const A = btnAdvance(btn);  // 开始提前 N 秒（每个按钮独立）
+  const B = btnDelay(btn);    // 结束延迟 N 秒（每个按钮独立）
   const start = addSec(nowHMS(startTs), -A);
   const end = addSec(nowHMS(stopTs), B);
   const reason = getBtnReason(btn);
-  const name = btn === 'A' ? state.nameA : state.nameB;
+  const name = btnName(btn);
 
   // 时长（秒）：end - start，处理跨天
   const sp = start.split(':').map(Number), ep = end.split(':').map(Number);
@@ -1952,23 +2011,64 @@ function parseLegacyTemplate(text) {
   });
   return out;
 }
-/* 渲染模板：#开始时间 #结束时间 #账号全称 #账号简称 #日期 #故障原因 */
-// forceFullName=true 时历史页名称统一用全称
-function renderTpl(tpl, rec, forceFullName) {
+/* ====== 非重复修饰符 /n ======
+   写法：紧跟在变量后面，如「#账号简称/n」「#故障原因/n」
+   效果：在一次复制/导出里，被修饰的变量只替换第一次；之后出现的位置整段省略。
+   注意：必须用正斜杠 /，写成 \\n 不会被识别。 */
+const TPL_NOREPEAT = '/n';
+// 变量主体 + 可选的非重复修饰符
+const TPL_VAR_RE = /#(?:开始时间|结束时间|账号全称|账号简称|故障原因|时间格式|日期)(\/n)?/g;
+function stripOnceMark(m) { return m[1] ? m[0].slice(0, m[0].length - 2) : m[0]; }
+// 变量被省略后可能留下空壳与多余空白（如「[甲方] 」→「[] 」），只在真的发生省略时才整理
+function tidyOmitted(s) {
+  return String(s)
+    .replace(/\[\]|\[\]|\(\)|（）|【】|「」|『』|<>|〈〉|《》|\{\}/g, '')  // 残留的空括号
+    .replace(/[ \t　]{2,}/g, ' ')
+    .replace(/^[ \t　、,，:：;；|·]+/, '')                                  // 行首残留的分隔符
+    .replace(/[ \t　]+$/, '');
+}
+function tplVals(rec, forceFullName) {
   const full = String(rec.name || '');
-  const nmFull = full;
-  const nmShort = forceFullName ? full : shortName(full);
-  return String(tpl || '')
-    .replace(/#账号全称/g, nmFull)
-    .replace(/#账号简称/g, nmShort)
-    .replace(/#开始时间/g, fmtRecTime(rec, rec.start))
-    .replace(/#结束时间/g, fmtRecTime(rec, rec.end))
-    .replace(/#日期/g, rec.date || dateOfTs(rec.ts || Date.now()))
-    .replace(/#故障原因/g, rec.reason || '')
-    .replace(/#时间格式/g, tplOf(rec.btn).timeFormat || DEFAULT_TIME_FMT);
+  return {
+    '#账号全称': full,
+    '#账号简称': forceFullName ? full : shortName(full),
+    '#开始时间': fmtRecTime(rec, rec.start),
+    '#结束时间': fmtRecTime(rec, rec.end),
+    '#日期': rec.date || dateOfTs(rec.ts || Date.now()),
+    '#故障原因': rec.reason || '',
+    '#时间格式': tplOf(rec.btn).timeFormat || DEFAULT_TIME_FMT
+  };
+}
+/* 渲染模板：#开始时间 #结束时间 #账号全称 #账号简称 #日期 #故障原因 #时间格式
+   dedupe 为 null/undefined 时按普通方式渲染（含首页与历史页）；
+   传入 Set 时才启用 /n 非重复逻辑（仅复制/导出使用）。 */
+function renderTpl(tpl, rec, forceFullName, dedupe) {
+  const src = String(tpl || '');
+  const vals = tplVals(rec, forceFullName);
+  const renderOnce = (line) => {
+    TPL_VAR_RE.lastIndex = 0;
+    let out = '', last = 0, m, suppressed = false;
+    while ((m = TPL_VAR_RE.exec(line)) !== null) {
+      const key = stripOnceMark(m);
+      let val = vals[key];
+      if (val === undefined) val = '';
+      if (m[1] && dedupe) {
+        if (dedupe.has(key)) { val = ''; suppressed = true; }
+        else dedupe.add(key);
+      }
+      out += line.slice(last, m.index) + val;
+      last = m.index + m[0].length;
+    }
+    out += line.slice(last);
+    return { text: (suppressed ? tidyOmitted(out) : out), suppressed: suppressed };
+  };
+  if (!dedupe) return renderOnce(src).text;
+  const parts = src.split('\n').map(renderOnce)
+    .filter(p => !(p.suppressed && p.text.trim() === ''));   // 整行被省略则整行不输出
+  return parts.map(p => p.text).join('\n');
 }
 /* ====== 日期标题行：只含 #日期（可带标点如「#日期：」）的行，按日期分组只渲染一次 ====== */
-const TPL_BODY_VARS = /#开始时间|#结束时间|#账号全称|#账号简称|#故障原因|#时间格式/;
+const TPL_BODY_VARS = /#(?:开始时间|结束时间|账号全称|账号简称|故障原因|时间格式)(?:\/n)?/;
 function splitTpl(tpl) {
   const src = String(tpl || '');
   const head = [], body = [];
@@ -1982,21 +2082,23 @@ function splitTpl(tpl) {
   if (!headStr) line = src;                          // 无标题行时整份模板即记录行
   return { head: headStr, line: line };
 }
-/* 按日期分组渲染纯文本（复制/导出用）：标题行每个日期只出现一次 */
+/* 按日期分组渲染纯文本（复制/导出用）：标题行每个日期只出现一次；/n 变量整段只出现一次 */
 function renderTplGrouped(tplOf, recs, forceFullName) {
   const out = [];
-  const emitted = new Set();
+  const emitted = new Set();   // 已输出过标题的日期
+  const dedupe = new Set();    // 已输出过的 /n 变量
   recs.forEach(r => {
     const s = splitTpl(tplOf(r));
     const day = r.date || dateOfTs(r.ts || Date.now());
     if (s.head && !emitted.has(day)) {
-      out.push(renderTpl(s.head, r, forceFullName));
+      pushLine(out, renderTpl(s.head, r, forceFullName, dedupe));
       emitted.add(day);
     }
-    out.push(renderTpl(s.line, r, forceFullName));
+    pushLine(out, renderTpl(s.line, r, forceFullName, dedupe));
   });
   return out.join('\n');
 }
+function pushLine(arr, text) { if (text !== '') arr.push(text); }
 
 /* 渲染为 HTML：开始/结束/原因保留可点击（主页记录项） */
 function renderTplHtml(tpl, rec) {
@@ -2010,11 +2112,12 @@ function renderTplHtml(tpl, rec) {
     '#故障原因': '<span class="reason-edit" onclick="openReasonModal(\'' + rec.id + '\')">' + escapeHtml(rec.reason || '') + '</span>',
     '#时间格式': escapeHtml(tplOf(rec.btn).timeFormat || DEFAULT_TIME_FMT)
   };
-  const re = /#账号全称|#账号简称|#开始时间|#结束时间|#日期|#故障原因|#时间格式/g;
+  // 非重复修饰符在首页/历史页不生效（每条记录都按模板完整渲染），仅忽略标记
+  const re = /#(?:账号全称|账号简称|开始时间|结束时间|日期|故障原因|时间格式)(\/n)?/g;
   let out = '', last = 0, m;
   const src = String(tpl || '');
   while ((m = re.exec(src)) !== null) {
-    out += escapeHtml(src.slice(last, m.index)) + html[m[0]];
+    out += escapeHtml(src.slice(last, m.index)) + (html[stripOnceMark(m)] || '');
     last = m.index + m[0].length;
   }
   return out + escapeHtml(src.slice(last));
@@ -2055,10 +2158,10 @@ let cfgSheetCtx = { btn: null, reason: '' };
 function openBottomCfg(btn) {
   cfgSheetCtx.btn = btn;
   cfgSheetCtx.reason = getBtnReason(btn);
-  const name = btn === 'A' ? state.nameA : state.nameB;
+  const name = btnName(btn);
   document.getElementById('cfgSheetTitle').textContent = '配置（' + shortName(name) + '）';
-  document.getElementById('cfgAdvance').value = state.offsetA;
-  document.getElementById('cfgDelay').value = state.offsetB;
+  document.getElementById('cfgAdvance').value = btnAdvance(btn);
+  document.getElementById('cfgDelay').value = btnDelay(btn);
   renderCfgReasonOpts();
   document.getElementById('cfgSheetModal').classList.add('show');
 }
@@ -2089,8 +2192,10 @@ function confirmCfgSheet() {
   const btn = cfgSheetCtx.btn;
   const a = parseInt(document.getElementById('cfgAdvance').value, 10);
   const b = parseInt(document.getElementById('cfgDelay').value, 10);
-  state.offsetA = (isNaN(a) || a < 0) ? 0 : a;
-  state.offsetB = (isNaN(b) || b < 0) ? 0 : b;
+  if (btn) {
+    cfgOf(btn).advance = (isNaN(a) || a < 0) ? 0 : a;
+    cfgOf(btn).delay = (isNaN(b) || b < 0) ? 0 : b;
+  }
   if (btn && cfgSheetCtx.reason) state.btnReason[btn] = cfgSheetCtx.reason;
   save();
   renderHome();
@@ -2119,8 +2224,8 @@ function buildTplText(btn) {
        + 'time_format = "' + tomlStr(t.timeFormat || DEFAULT_TIME_FMT) + '"\n';
 }
 function openTplModal(btn) {
-  tplModalBtn = (btn === 'B') ? 'B' : 'A';
-  const name = tplModalBtn === 'A' ? state.nameA : state.nameB;
+  tplModalBtn = BTN_KEYS.indexOf(btn) >= 0 ? btn : 'A';
+  const name = btnName(tplModalBtn);
   document.getElementById('tplModalTitle').textContent = '模板配置（' + shortName(name) + '）';
   document.getElementById('tplInput').value = buildTplText(tplModalBtn);
   document.getElementById('tplModal').classList.add('show');
@@ -2155,9 +2260,7 @@ function closeTplHelp() { document.getElementById('tplHelpModal').classList.remo
 function renderHome() {
   renderButtonLabels();
   const today = dateOfTs(Date.now());
-  ['A', 'B'].forEach(btn => {
-    const name = btn === 'A' ? state.nameA : state.nameB;
-
+  activeBtns().forEach(btn => {
     // 上区中部：当天日期（一行完整显示）
     const dateEl = document.getElementById('rcDate' + btn);
     if (dateEl) dateEl.textContent = today;
@@ -2184,18 +2287,10 @@ function renderHome() {
     const rEl = document.getElementById('btn' + btn + '-reason');
     if (rEl) rEl.textContent = getBtnReason(btn);
     const advEl = document.getElementById('rcAdvance' + btn);
-    if (advEl) advEl.textContent = state.offsetA + '秒';
+    if (advEl) advEl.textContent = btnAdvance(btn) + '秒';
     const dlyEl = document.getElementById('rcDelay' + btn);
-    if (dlyEl) dlyEl.textContent = state.offsetB + '秒';
+    if (dlyEl) dlyEl.textContent = btnDelay(btn) + '秒';
   });
-
-  // 页签与复制按钮：显示账户名简称
-  const tabA = document.getElementById('tabA'), tabB = document.getElementById('tabB');
-  if (tabA) tabA.textContent = shortName(state.nameA);
-  if (tabB) tabB.textContent = shortName(state.nameB);
-  const cpA = document.getElementById('copyBtnA'), cpB = document.getElementById('copyBtnB');
-  if (cpA) cpA.textContent = '📋 复制 ' + shortName(state.nameA);
-  if (cpB) cpB.textContent = '📋 复制 ' + shortName(state.nameB);
 }
 
 /* 长按绑定：返回前会抖动提示，松手前不触发删除 */
@@ -2250,8 +2345,8 @@ function removeReason(r) {
   }
   showConfirm('删除原因', '确定删除「' + r + '」？', () => {
     state.customReasons = state.customReasons.filter(x => x !== r);
-    // 同步清理各按钮的覆盖选择
-    ['A', 'B'].forEach(b => { if (state.btnReason[b] === r) delete state.btnReason[b]; });
+    // 同步清理各按钮的覆盖选择（含已隐藏的按钮，避免残留失效原因）
+    BTN_KEYS.forEach(b => { if (state.btnReason[b] === r) delete state.btnReason[b]; });
     if (state.defaultReason === r) state.defaultReason = allReasons()[0];
     save();
     renderHome();
@@ -2306,7 +2401,7 @@ function renderRecords() {
     const text = renderTplHtml(splitTpl(tplOf(r.btn).record).line, r);
     return '<div class="record-item">' +
       '<div class="text">' + text + '</div>' +
-      '<span class="tag' + (r.btn === 'B' ? ' b' : '') + '">' + r.btn + '</span>' +
+      btnTagHtml(r.btn) +
       '<button class="del" onclick="delRecord(\'' + r.id + '\')">×</button>' +
     '</div>';
   };
@@ -2533,7 +2628,7 @@ function renderHistory() {
       const text = escapeHtml(renderTpl(splitTpl(tplOf(r.btn).record).line, r, true));
       return '<div class="h-item">' +
         '<div class="h-text">' + text + '</div>' +
-        '<span class="h-tag' + (r.btn === 'B' ? ' b' : '') + '">' + r.btn + '</span>' +
+        btnHTagHtml(r.btn) +
         '<button class="h-copy" onclick="copyOneRecord(\'' + r.id + '\')" title="复制">📋</button>' +
       '</div>';
     }).join('');
@@ -2563,7 +2658,7 @@ function copyByButton(btn) {
   const text = buildText(btn);
   if (!text) { toast('今天没有 ' + btn + ' 的记录'); return; }
   pendingCopy = text;
-  const name = shortName(btn === 'A' ? state.nameA : state.nameB);
+  const name = shortName(btnName(btn));
   document.getElementById('copyTitle').textContent = '复制 ' + btn + ' 记录（' + name + '）';
   document.getElementById('copyContent').textContent = text;
   document.getElementById('copyModal').classList.add('show');
@@ -2623,6 +2718,8 @@ function copyOneRecord(id) {
   }
 }
 load();
+renderButtonUI();
+renderSettingsRows();
 renderHome();
 renderRecords();
 
@@ -2658,6 +2755,10 @@ document.addEventListener('click', e => {
   const dp = document.getElementById('datePicker');
   if (dp && dp.classList.contains('open') && !dp.contains(e.target)) {
     closeDatePicker();
+  }
+  const sw = document.getElementById('setBtnCountWrap');
+  if (sw && sw.classList.contains('open') && !sw.contains(e.target)) {
+    closeBtnCountMenu();
   }
 });
 
@@ -3367,8 +3468,8 @@ function importFaultJSON(event) {
         if (r.dur === undefined && r.start && r.end) r.dur = parseDurFromTimes(r.start, r.end);
         if (!r.date) r.date = r.ts ? dateOfTs(r.ts) : dateOfTs(Date.now());
         if (!r.ts) r.ts = Date.now();
-        if (!r.btn) r.btn = 'A';
-        if (!r.name) r.name = r.btn === 'A' ? state.nameA : state.nameB;
+        if (!r.btn || BTN_KEYS.indexOf(r.btn) < 0) r.btn = 'A';
+        if (!r.name) r.name = btnName(r.btn);
         state.records.push(r);
         added++;
       });
