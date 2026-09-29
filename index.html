@@ -2350,7 +2350,7 @@ function removeReason(r) {
     if (state.defaultReason === r) state.defaultReason = allReasons()[0];
     save();
     renderHome();
-    if (reasonSheetCtx.btn) renderSheetReasonOpts();
+    if (cfgSheetCtx.btn) renderCfgReasonOpts();
     toast('已删除');
   });
 }
@@ -2369,8 +2369,12 @@ function confirmReasonAdd() {
   state.customReasons.push(v);
   save();
   closeReasonAdd();
-  if (reasonSheetCtx.btn) renderSheetReasonOpts();
-  toast('已添加「' + v + '」');
+  // 立即把新原因加入列表并选中，确保配置页下区原因选项实时刷新
+  if (cfgSheetCtx.btn) {
+    cfgSheetCtx.reason = v;
+    renderCfgReasonOpts();
+  }
+  toast('添加成功：' + v);
 }
 
 /* ====== 列表渲染 ====== */
