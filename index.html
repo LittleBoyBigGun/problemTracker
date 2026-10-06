@@ -1864,6 +1864,13 @@ function updateTimer(btn) {
   if (!rs || !el) return;
   const sec = Math.floor((Date.now() - rs.startTs) / 1000);
   el.textContent = pad(Math.floor(sec/60)) + ':' + pad(sec % 60);
+  // 顶部总时间同步增长（仅当跨秒变化时更新，避免无谓重排）
+  const totalEl = document.getElementById('rcTotal' + btn);
+  if (totalEl) {
+    const t = fmtTotalSeconds(todayTotalSeconds(btn));
+    const txt = '今日 ' + t;
+    if (totalEl.textContent !== txt) totalEl.textContent = txt;
+  }
 }
 
 /* ====== 账户名简称：去掉配置的账号前缀 ====== */
@@ -2134,7 +2141,8 @@ function recordSeconds(rec) {
   }
   return Math.max(0, Math.round(sec));
 }
-/* 今日该账号的全部记录时长之和（秒，精确累加，不取整不估算） */
+/* 今日该账号的全部记录时长之和（秒，精确累加，不取整不估算）
+   进行中的记录按实时已记录时长计入，保证顶部总时间随计时同步增长 */
 function todayTotalSeconds(btn) {
   const today = dateOfTs(Date.now());
   let sum = 0;
@@ -2143,6 +2151,11 @@ function todayTotalSeconds(btn) {
     if ((r.date || dateOfTs(r.ts || Date.now())) !== today) return;
     sum += recordSeconds(r);
   });
+  // 加上正在计时中的这一次（与卡片计时器同口径：实际经过的秒数）
+  if (recState[btn] && recState[btn].startTs) {
+    const live = Math.floor((Date.now() - recState[btn].startTs) / 1000);
+    if (live > 0) sum += live;
+  }
   return sum;
 }
 /* 秒 -> m:ss / h:mm:ss（精确到秒） */
@@ -2432,6 +2445,7 @@ function delRecord(id) {
     state.records = state.records.filter(r => r.id !== id);
     save();
     renderRecords();
+    renderHome();   // 删除记录后总时间需重算
     toast('已删除');
   });
 }
@@ -2456,6 +2470,7 @@ function clearAll() {
     state.records = state.records.filter(r => (r.date || dateOfTs(r.ts || Date.now())) !== today);
     save();
     renderRecords();
+    renderHome();   // 清空后总时间需重算
     toast('已清空今日记录');
   });
 }
@@ -2466,6 +2481,7 @@ function clearAllRecords() {
     state.records = [];
     save();
     renderRecords();
+    renderHome();   // 清空后总时间需重算
     toast('已清空');
   });
 }
@@ -2539,6 +2555,7 @@ function saveTimeEdit() {
   rec.start = newStart; rec.end = newEnd; rec.dur = dur;
   save();
   renderRecords();
+  renderHome();   // 时长变化需同步刷新卡片右上角总时间
   closeTimeModal();
   toast('已保存');
 }
@@ -2588,6 +2605,7 @@ function deleteFromEdit() {
     state.records = state.records.filter(r => r.id !== editCtx.id);
     save();
     renderRecords();
+    renderHome();   // 删除记录后总时间需重算
     closeTimeModal();
     toast('已删除');
   });
